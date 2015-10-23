@@ -1,0 +1,12 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+extras="$here/extras"
+fill() { printf "%s" "$1"; }
+mkdir -p "$extras"
+
+# uncomment and optionally change any of the following
+fill "xterm" > "$extras/launch-terminal"
+fill "firefox" > "$extras/launch-web-browser"
+#fill "feh" > "$extras/launch-image-viewer"
