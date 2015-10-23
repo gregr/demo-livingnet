@@ -1,5 +1,6 @@
 #lang racket
 (require
+  gregr-misc/dict
   gregr-misc/sugar
   )
 
@@ -18,19 +19,25 @@
 
 (define ((launch cmd) arg) (system* cmd arg))
 
+(define (capability-network msg) (void))
+(define (capability-storage msg) (void))
+
 (define capabilities-builtin
   (hash "console" displayln
         "racket-eval" eval))
+(define capabilities-hardware
+  (hash "network" capability-network
+        "storage" capability-storage))
 (define capabilities-extra
   (make-immutable-hash
     (forl path <- (directory-list "extras")
           (cons (path->string path)
                 (launch (file->string (build-path "extras" path)))))))
 
+
 (define capabilities
-  (append (set->sorted hardware-found)
-          (hash-keys capabilities-builtin)
-          (hash-keys capabilities-extra)))
+  (dict-join (dict-join capabilities-builtin capabilities-hardware)
+             capabilities-extra))
 
 (module+ main
-  (displayln (format "found capabilities: ~a" (set->sorted capabilities))))
+  (displayln (format "found capabilities: ~a" (hash-keys capabilities))))
