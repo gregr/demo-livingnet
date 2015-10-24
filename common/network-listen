@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+machine_name="$(basename "$(pwd)")"
+machine_dir="$(pwd)"
+network_dir="$machine_dir/hardware/network"
+CONN_PATH="$network_dir/uplink/wan/$machine_name"
+
+mkfifo "$CONN_PATH"
