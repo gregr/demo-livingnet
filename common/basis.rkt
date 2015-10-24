@@ -20,6 +20,8 @@
   )
 
 (require
+  gregr-misc/record
+  gregr-misc/sugar
   racket/file
   racket/function
   racket/port
@@ -52,15 +54,19 @@
 (define dir-wan (build-path dir-network "uplink" "wan"))
 (define wan-path (build-path dir-wan machine-name))
 
+(record connection wd in out)
 (define (network-listen)
   (unless (file-exists? wan-path) (system (path->string path-network-listen)))
-  (read/file wan-path))
+  (define conn-wd (read/file wan-path))
+  (connection conn-wd (build-path conn-wd "out") (build-path conn-wd "in")))
 (define (network-connect hostname)
-  (with-output-to-string
-    (thunk (system* (path->string path-network-connect) hostname))))
-(define (network-close conn) (delete-directory/files conn))
-(define (network-send conn io value) (write/file (build-path conn io) value))
-(define (network-recv conn io) (read/file (build-path conn io)))
+  (define conn-wd
+    (with-output-to-string
+      (thunk (system* (path->string path-network-connect) hostname))))
+  (connection conn-wd (build-path conn-wd "in") (build-path conn-wd "out")))
+(def (network-close (connection wd _ _)) (delete-directory/files wd))
+(def (network-send (connection _ _ out) value) (write/file out value))
+(def (network-recv (connection _ in _)) (read/file in))
 
 (define dir-storage (build-path dir-hardware "storage"))
 (define dir-data (build-path dir-storage "data"))
