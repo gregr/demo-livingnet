@@ -1,6 +1,14 @@
 #!/bin/bash
-set -eufo pipefail
+set -euo pipefail
+shopt -s failglob
 
-internet_dir="$1"
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+machines_dir="$(pwd)"
+mkdir -p "$1"
+cd "$1"
+export wan_dir="$(pwd)"
 
-mkdir -p "$internet_dir"
+for machine_dir in "$machines_dir"/*; do
+  cd "$machine_dir" && "$here/machine-prepare"
+done
+cd "$machines_dir"
