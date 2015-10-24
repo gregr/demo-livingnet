@@ -1,0 +1,6 @@
+#!/bin/bash
+set -eufo pipefail
+
+internet_dir="$1"
+
+mkdir -p "$internet_dir"

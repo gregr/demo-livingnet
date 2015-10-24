@@ -1,0 +1,19 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+machine_dir="$(pwd)"
+hardware_dir="$machine_dir/hardware"
+storage_dir="$hardware_dir/storage"
+network_dir="$hardware_dir/network"
+network_null_dir="$network_dir/null"
+network_uplink_dir="$network_dir/uplink"
+: ${wan_dir="$network_null_dir"}
+
+mkdir -p "$machine_dir/extras"
+mkdir -p "$network_dir/connections"
+mkdir -p "$network_null_dir"
+mkdir -p "$network_uplink_dir"
+mkdir -p "$storage_dir/data"
+touch "$storage_dir/master-boot-record"
+ln -sfn "$wan_dir" "$network_uplink_dir/wan"

@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+machine_dir="$1"
+
+mkdir -p "$machine_dir"
+cd "$machine_dir"
+"$here/machine-prepare"
