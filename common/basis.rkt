@@ -7,8 +7,10 @@
   network-close
   network-send
   network-recv
+  storage-delete
   storage-get
   storage-put
+  storage-mbr-delete
   storage-mbr-get
   storage-mbr-put
   read/file
@@ -66,5 +68,9 @@
 
 (define (storage-get path) (read/file (build-path dir-data path)))
 (define (storage-put path value) (write/file (build-path dir-data path) value))
+(define (storage-delete path)
+  (delete-directory/files (build-path dir-data path)))
 (define (storage-mbr-get) (read/file path-mbr))
 (define (storage-mbr-put value) (write/file path-mbr value))
+(define (storage-mbr-delete)
+  (call-with-output-file path-mbr (curry display "") #:exists 'replace))
