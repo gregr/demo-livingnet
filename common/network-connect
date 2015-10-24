@@ -1,0 +1,15 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+target_host="$1"
+machine_dir="$(pwd)"
+network_dir="$machine_dir/hardware/network"
+wan_dir="$network_dir/uplink/wan"
+connections_dir="$network_dir/connections"
+CONN_DIR="$(mktemp -d $network_dir/connections/connection.XXXXXXXX)"
+
+mkfifo "$CONN_DIR/in"
+mkfifo "$CONN_DIR/out"
+printf "\"%s\"\n" "$CONN_DIR" > "$wan_dir/$target_host"
+printf "%s" "$CONN_DIR"
