@@ -1,5 +1,8 @@
 #lang racket/base
 (provide
+  bootstrap/default
+  bootstrap/local
+  bootstrap/remote
   launch-and-forget
   machine-name
   network-listen
@@ -24,6 +27,7 @@
   gregr-misc/sugar
   racket/file
   racket/function
+  racket/match
   racket/port
   racket/runtime-path
   racket/system
@@ -80,3 +84,15 @@
 (define (storage-mbr-put value) (write/file path-mbr value))
 (define (storage-mbr-delete)
   (call-with-output-file path-mbr (curry display "") #:exists 'replace))
+
+(define (bootstrap/local path) (eval (storage-get path)))
+(define (bootstrap/remote hostname)
+  (define conn (network-connect hostname))
+  (network-send conn #f)
+  (define bootstrap (network-recv conn))
+  (network-close conn)
+  (eval bootstrap))
+(define (bootstrap/default bootstrap-hostname-default)
+  (match (storage-mbr-get)
+    ((? eof-object?) (bootstrap/remote bootstrap-hostname-default))
+    (mbr (eval mbr))))
