@@ -20,6 +20,8 @@
   read/string
   write/file
   write/string
+  test-serve
+  test-boot
   )
 
 (require
@@ -96,3 +98,23 @@
   (match (storage-mbr-get)
     ((? eof-object?) (bootstrap/remote bootstrap-hostname-default))
     (mbr (eval mbr))))
+
+(define (test-serve motd bootstrap-program)
+  (define conn (network-listen))
+  (define request (network-recv conn))
+  (if request
+    (begin
+      (displayln (format "received non-bootstrap request: ~a" request))
+      (network-send conn motd))
+    (begin
+      (displayln "received bootstrap request")
+      (network-send conn bootstrap-program))))
+
+(define test-boot
+  '(begin (storage-put "boot/kernel"
+                       '(begin
+                          (displayln "bootstrapping ...")
+                          (list 'seven (+ 4 3))))
+          (storage-mbr-put '(begin (displayln "you can trust us!")
+                                   (bootstrap/local "boot/kernel")))
+          (bootstrap/default "")))
