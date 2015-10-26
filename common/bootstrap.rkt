@@ -104,22 +104,18 @@
   (define get (global-get net fsys))
   (lambda (hostname request) ((get hostname) request #f)))
 
-; TODO: define negotiate
-; Support a single evaluation choice using a standard interpreter (just code).
-; Alternative language choices, capability requests, and explanations can be
-; handled during evaluation.
-; Use a dedicated cache that evaluation can decide whether to populate.
-
-; TODO:
-; capabilities that can be requested by site signature
-; signature = (host, request-data)
-; enables cross-site collaboration on your machine despite differing trust
-; While sites can 'get' each other's data, they can only evaluate that data in
-; their personal contexts.
-; build on top of 'negotiate'?
+(def ((negotiate net fsys hostname->context) hostname request)
+  code = (cache-get fsys (build-path hostname (format "~v" request))
+                    (thunk (void)) #f)
+  code = (if (void? code) (download net hostname request) code)
+  (with-handlers ((exn:fail? (lambda (_) (void))))
+    ; TODO: application-specific eval
+    ((eval code) (hostname->context hostname))))
 
 (define cache/get-fsys (filesystem global-storage "cache/get"))
 (define cache/negotiate-fsys (filesystem global-storage "cache/negotiate"))
+(define global-negotiate
+  (negotiate global-network cache/negotiate-fsys (const (void))))
 
 (define global-capabilities
   (hash 'console global-console
@@ -128,9 +124,11 @@
         'filesystem (filesystem global-storage "application-data")
         ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
         'get-other (get-other global-network cache/get-fsys)
+        'negotiate global-negotiate
         ))
-; TODO: negotiate for site-specific cap keys
-(define (global-context cap-key) (hash-ref global-capabilities cap-key))
+(define ((hash->context cap-hash) cap-key)
+  (hash-ref cap-hash cap-key (thunk (void))))
+(define global-context (hash->context global-capabilities))
 
 ; TODO: more sophisticated authority management
 ; capability guardedness spectrum
