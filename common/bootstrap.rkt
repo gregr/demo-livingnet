@@ -8,6 +8,7 @@
   "basis.rkt"
   gregr-misc/oop
   gregr-misc/sugar
+  racket/function
   )
 
 ; TODO: IPC
@@ -72,9 +73,10 @@
   _ = (o@ conn 'close)
   response)
 
-(define (((global-get net fsys) hostname) request (cache-duration #f))
+(define (cache-put fsys path data time-added cache-duration)
+  (o@ fsys 'put path (list time-added cache-duration data)))
+(define (cache-get fsys path origin-get cache-duration)
   (lets now = (current-seconds)
-        path = (build-path hostname (format "~v" request))
         cache-entry = (o@ fsys 'get path)
         (values cached? data) =
         (if (eof-object? cache-entry)
@@ -87,9 +89,15 @@
                 (if (and duration (<= (+ time-added duration) now))
                   (values #f (void)) (values #t data))))
         (if cached? data
-          (lets data = (download net hostname request)
-                _ = (o@ fsys 'put path (list now cache-duration data))
+          (lets data = (origin-get)
+                _ = (unless (void? data)
+                      (cache-put fsys path data now cache-duration))
                 data))))
+
+(define (((global-get net fsys) hostname) request (cache-duration #f))
+  (cache-get fsys (build-path hostname (format "~v" request))
+             (thunk (download net hostname request))
+             cache-duration))
 
 (define (get-self net fsys hostname) ((global-get net fsys) hostname))
 (define (get-other net fsys)
