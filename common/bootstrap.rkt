@@ -1,7 +1,5 @@
 #lang racket/base
 (provide
-  network
-  storage
   )
 
 (require
@@ -9,7 +7,7 @@
   gregr-misc/oop
   )
 
-(define network
+(define global-network
   (let ((connection (class _ (conn) () ()
                       (close () (network-close conn))
                       (send (value) (network-send conn value))
@@ -19,7 +17,7 @@
         (listen () (connection (network-listen)))
         (connect (hostname) (connection (network-connect hostname)))))))
 
-(define storage
+(define global-storage
   (let ((mbr (object-new '()
                (method-table _
                  (get () (storage-mbr-get))
