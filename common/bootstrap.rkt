@@ -13,9 +13,24 @@
 
 ; TODO: IPC
 ; uni-directional
-;   ports(strings), channels(values)
+;   channels(values)
 ; bi-directional
 ;   sockets(values)
+
+(define port/input
+  (class _ (in) () ()
+    (get-char () (read-char in))
+    (get-line () (read-line in))
+    (port () in)))
+(define port/output
+  (class _ (out) () ()
+    (put (value) (display value out))
+    (put-line (value) (displayln value out))
+    (port () out)))
+
+(define global-console
+  (object-new (list (port/input (current-input-port))
+                    (port/output (current-output-port)))))
 
 ; TODO:
 ; single host connector?
@@ -48,17 +63,6 @@
         (put (path value) (storage-put path value))
         (delete (path) (storage-delete path))
         (mbr () mbr)))))
-
-; TODO:
-; current-x-port
-; construct socket as mixin of two port objects
-(define global-console
-  (object-new '()
-    (method-table _
-      (get-char () (read-char))
-      (get-line () (read-line))
-      (put (value) (display value))
-      (put-line (value) (displayln value)))))
 
 (define filesystem
   (class _ (storage root) ((subpath (lambda (path) (build-path root path)))) ()
