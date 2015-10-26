@@ -1,7 +1,6 @@
 #lang racket/base
 (provide
   filesystem
-  get
   global-context
   )
 
@@ -73,24 +72,29 @@
   _ = (o@ conn 'close)
   response)
 
-; TODO: this approach to cache-duration isn't ideal, but we'll live with it.
-; 1) We don't want to hand out the ability to DoS other sites.
-; 2) Sites should be able to specify case-by-case durations for their content.
-(define ((get net fsys) signature (cache-duration 900))
-  (lets (list hostname request) = signature
+(define (((global-get net fsys) hostname) request (cache-duration #f))
+  (lets now = (current-seconds)
         path = (build-path hostname (format "~v" request))
         cache-entry = (o@ fsys 'get path)
         (values cached? data) =
         (if (eof-object? cache-entry)
           (values #f (void))
-          (lets (list time-added data) = cache-entry
-                (if (<= (+ time-added cache-duration) (current-seconds))
-                  (values #f (void))
-                  (values #t data))))
+          (lets (list time-added duration data) = cache-entry
+                cache-duration =
+                (if cache-duration (if duration (min duration cache-duration)
+                                     cache-duration)
+                  duration)
+                (if (and duration (<= (+ time-added duration) now))
+                  (values #f (void)) (values #t data))))
         (if cached? data
           (lets data = (download net hostname request)
-                _ = (o@ fsys 'put path (list (current-milliseconds) data))
+                _ = (o@ fsys 'put path (list now cache-duration data))
                 data))))
+
+(define (get-self net fsys hostname) ((global-get net fsys) hostname))
+(define (get-other net fsys)
+  (define get (global-get net fsys))
+  (lambda (hostname request) ((get hostname) request #f)))
 
 ; TODO: define negotiate
 ; support multiple evaluation choices in negotiate response
@@ -104,12 +108,15 @@
 ; their personal contexts.
 ; build on top of 'negotiate'?
 
+(define cache/get-fsys (filesystem global-storage "cache/get"))
+
 (define global-capabilities
   (hash 'console global-console
         'network global-network
         'storage global-storage
         'filesystem (filesystem global-storage "application-data")
-        'get (get global-network (filesystem global-storage "cache"))
+        ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
+        'get-other (get-other global-network cache/get-fsys)
         ))
 ; TODO: negotiate for site-specific cap keys
 (define (global-context cap-key) (hash-ref global-capabilities cap-key))
