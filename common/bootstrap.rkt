@@ -105,8 +105,10 @@
   (lambda (hostname request) ((get hostname) request #f)))
 
 ; TODO: define negotiate
-; support multiple evaluation choices in negotiate response
-;   [(documentation/explanation/metadata, eval, requested-caps, code)]
+; Support a single evaluation choice using a standard interpreter (just code).
+; Alternative language choices, capability requests, and explanations can be
+; handled during evaluation.
+; Use a dedicated cache that evaluation can decide whether to populate.
 
 ; TODO:
 ; capabilities that can be requested by site signature
@@ -117,6 +119,7 @@
 ; build on top of 'negotiate'?
 
 (define cache/get-fsys (filesystem global-storage "cache/get"))
+(define cache/negotiate-fsys (filesystem global-storage "cache/negotiate"))
 
 (define global-capabilities
   (hash 'console global-console
