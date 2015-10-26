@@ -17,6 +17,7 @@
   storage-mbr-delete
   storage-mbr-get
   storage-mbr-put
+  read/no-eof
   read/file
   read/string
   write/file
@@ -52,10 +53,10 @@
   (system (format "mkdir -p \"$(dirname '~a')\" && printf \"%s\n\" '~a' > ~a"
                   path str path)))
 
-(define (read/string str)
-  (match (read (open-input-string str))
-    ((? eof-object?) (void))
-    (result result)))
+(define (read/no-eof in) (match (read in)
+                           ((? eof-object?) (void))
+                           (result result)))
+(define (read/string str) (read/no-eof (open-input-string str)))
 (define (read/file path) (read/string (blocking-read path)))
 (define (write/string value) (call-with-output-string (curry write value)))
 (define (write/file path value) (blocking-write path (write/string value)))

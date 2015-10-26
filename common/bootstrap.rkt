@@ -12,8 +12,6 @@
   )
 
 ; TODO: IPC
-; uni-directional
-;   channels(values)
 ; bi-directional
 ;   sockets(values)
 
@@ -27,6 +25,8 @@
     (put (value) (display value out))
     (put-line (value) (displayln value out))
     (port () out)))
+(define channel/input (class _ (in) () () (get () (read/no-eof in))))
+(define channel/output (class _ (out) () () (put (value) (write value out))))
 
 (define global-console
   (object-new (list (port/input (current-input-port))
