@@ -44,7 +44,9 @@
 
 (define (blocking-read path)
   (with-output-to-string
-    (thunk (system (string-append "cat < " (path->string path))))))
+    (thunk (system
+             (format "mkdir -p \"$(dirname '~a')\" && touch '~a' && cat < '~a'"
+                     path path path)))))
 (define (blocking-write path str)
   (system (format "mkdir -p \"$(dirname '~a')\" && printf \"%s\n\" '~a' > ~a"
                   path str path)))
