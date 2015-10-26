@@ -23,6 +23,7 @@
 
 (define global-network
   (let ((connection (class _ (conn) () ()
+                      (shutdown () (network-shutdown conn))
                       (close () (network-close conn))
                       (send (value) (network-send conn value))
                       (recv () (network-recv conn)))))

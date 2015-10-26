@@ -7,6 +7,7 @@
   machine-name
   network-listen
   network-connect
+  network-shutdown
   network-close
   network-send
   network-recv
@@ -72,6 +73,7 @@
     (with-output-to-string
       (thunk (system* (path->string path-network-connect) hostname))))
   (connection conn-wd (build-path conn-wd "in") (build-path conn-wd "out")))
+(def (network-shutdown (connection _ _ out)) (blocking-write out ""))
 (def (network-close (connection wd _ _)) (delete-directory/files wd))
 (def (network-send (connection _ _ out) value) (write/file out value))
 (def (network-recv (connection _ in _)) (read/file in))
