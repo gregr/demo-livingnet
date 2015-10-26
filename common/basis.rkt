@@ -1,6 +1,6 @@
 #lang racket/base
 (provide
-  bootstrap/default
+  ;bootstrap/default
   bootstrap/local
   bootstrap/remote
   launch-and-forget
@@ -14,9 +14,6 @@
   storage-delete
   storage-get
   storage-put
-  storage-mbr-delete
-  storage-mbr-get
-  storage-mbr-put
   read/no-eof
   read/file
   read/string
@@ -83,17 +80,11 @@
 (def (network-recv (connection _ in _)) (read/file in))
 
 (define dir-storage (build-path dir-hardware "storage"))
-(define dir-data (build-path dir-storage "data"))
-(define path-mbr (build-path dir-storage "master-boot-record"))
-
-(define (storage-get path) (read/file (build-path dir-data path)))
-(define (storage-put path value) (write/file (build-path dir-data path) value))
+(define (storage-get path) (read/file (build-path dir-storage path)))
+(define (storage-put path value)
+  (write/file (build-path dir-storage path) value))
 (define (storage-delete path)
-  (delete-directory/files (build-path dir-data path)))
-(define (storage-mbr-get) (read/file path-mbr))
-(define (storage-mbr-put value) (write/file path-mbr value))
-(define (storage-mbr-delete)
-  (call-with-output-file path-mbr (curry display "") #:exists 'replace))
+  (delete-directory/files (build-path dir-storage path)))
 
 (define (bootstrap/local path) (eval (storage-get path)))
 (define (bootstrap/remote hostname)
@@ -102,10 +93,10 @@
   (define bootstrap (network-recv conn))
   (network-close conn)
   (eval bootstrap))
-(define (bootstrap/default bootstrap-hostname-default)
-  (match (storage-mbr-get)
-    ((? void?) (bootstrap/remote bootstrap-hostname-default))
-    (mbr (eval mbr))))
+;(define (bootstrap/default bootstrap-hostname-default)
+  ;(match (storage-mbr-get)
+    ;((? void?) (bootstrap/remote bootstrap-hostname-default))
+    ;(mbr (eval mbr))))
 
 (define (test-serve motd bootstrap-program)
   (define conn (network-listen))
