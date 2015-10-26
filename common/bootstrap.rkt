@@ -18,7 +18,6 @@
 ;   sockets(values)
 
 ; TODO:
-; is eof handling correct?
 ; single host connector?
 
 (define global-network
@@ -80,7 +79,7 @@
   (lets now = (current-seconds)
         cache-entry = (o@ fsys 'get path)
         (values cached? data) =
-        (if (eof-object? cache-entry)
+        (if (void? cache-entry)
           (values #f (void))
           (lets (list time-added duration data) = cache-entry
                 cache-duration =

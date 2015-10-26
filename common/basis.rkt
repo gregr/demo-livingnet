@@ -52,7 +52,10 @@
   (system (format "mkdir -p \"$(dirname '~a')\" && printf \"%s\n\" '~a' > ~a"
                   path str path)))
 
-(define (read/string str) (read (open-input-string str)))
+(define (read/string str)
+  (match (read (open-input-string str))
+    ((? eof-object?) (void))
+    (result result)))
 (define (read/file path) (read/string (blocking-read path)))
 (define (write/string value) (call-with-output-string (curry write value)))
 (define (write/file path value) (blocking-write path (write/string value)))
@@ -100,7 +103,7 @@
   (eval bootstrap))
 (define (bootstrap/default bootstrap-hostname-default)
   (match (storage-mbr-get)
-    ((? eof-object?) (bootstrap/remote bootstrap-hostname-default))
+    ((? void?) (bootstrap/remote bootstrap-hostname-default))
     (mbr (eval mbr))))
 
 (define (test-serve motd bootstrap-program)
