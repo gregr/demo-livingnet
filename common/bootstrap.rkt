@@ -46,12 +46,12 @@
 
 (define ((network-connector network host)) (o@ network 'connect host))
 
-(define read-only-mixin
-  (object '() (method-table __ (put _ (void)) (delete _ (void)))))
-(define write-only-mixin
-  (object '() (method-table __ (get _ (void)))))
-(define (read-only parent) (object (list parent read-only-mixin)))
-(define (write-only parent) (object (list parent write-only-mixin)))
+(define (read-only parent)
+  (object '() (method-table _ (get args (o@* parent 'get args)))))
+(define (write-only parent)
+  (object '() (method-table _
+                (put args (o@* parent 'put args))
+                (delete args (o@* parent 'delete args)))))
 (define storage/sub
   (class _ (parent root) ((subroot (build-path (o@ parent 'root) root)))
          (parent)
