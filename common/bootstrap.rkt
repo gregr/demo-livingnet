@@ -16,11 +16,13 @@
 
 (define port/input
   (class _ (in) () ()
+    (close () (close-input-port in))
     (get-char () (read-char in))
     (get-line () (read-line in))
     (port () in)))
 (define port/output
   (class _ (out) () ()
+    (close () (close-output-port out))
     (put (value) (display value out))
     (put-line (value) (displayln value out))
     (port () out)))
