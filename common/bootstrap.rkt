@@ -78,6 +78,8 @@
   conn = (o@ net 'connect hostname)
   _ = (o@ conn 'put request)
   response = (o@ conn 'get)
+  _ = (o@ conn 'delete)
+  ; TODO: faithful implementation would 'get' until response is void
   _ = (o@ conn 'close)
   response)
 
