@@ -31,9 +31,6 @@
   (object (list (port/input (current-input-port))
                 (port/output (current-output-port)))))
 
-; TODO:
-; single host connector?
-
 (define global-network
   (let ((connection (class _ (conn) () ()
                       (shutdown () (network-shutdown conn))
@@ -44,6 +41,8 @@
       (method-table _
         (listen () (connection (network-listen)))
         (connect (hostname) (connection (network-connect hostname)))))))
+
+(define ((network-connector network host)) (o@ network 'connect host))
 
 (define read-only-mixin
   (object '() (method-table __ (put _ (void)) (delete _ (void)))))
@@ -129,6 +128,7 @@
         'network global-network
         'storage global-storage
         'filesystem (storage/sub global-filesystem "application-data")
+        ;'connect-self (network-connector global-network hostname)  ; TODO
         ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
         'get-other (get-other global-network cache/get-fsys)
         'negotiate global-negotiate
