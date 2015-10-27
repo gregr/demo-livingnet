@@ -28,8 +28,8 @@
 (define channel/output (class _ (out) () () (put (value) (write value out))))
 
 (define global-console
-  (object-new (list (port/input (current-input-port))
-                    (port/output (current-output-port)))))
+  (object (list (port/input (current-input-port))
+                (port/output (current-output-port)))))
 
 ; TODO:
 ; single host connector?
@@ -40,17 +40,17 @@
                       (close () (network-close conn))
                       (send (value) (network-send conn value))
                       (recv () (network-recv conn)))))
-    (object-new '()
+    (object '()
       (method-table _
         (listen () (connection (network-listen)))
         (connect (hostname) (connection (network-connect hostname)))))))
 
 (define read-only-mixin
-  (object-new '() (method-table __ (put _ (void)) (delete _ (void)))))
+  (object '() (method-table __ (put _ (void)) (delete _ (void)))))
 (define write-only-mixin
-  (object-new '() (method-table __ (get _ (void)))))
-(define (read-only parent) (object-new (list parent read-only-mixin)))
-(define (write-only parent) (object-new (list parent write-only-mixin)))
+  (object '() (method-table __ (get _ (void)))))
+(define (read-only parent) (object (list parent read-only-mixin)))
+(define (write-only parent) (object (list parent write-only-mixin)))
 (define storage/sub
   (class _ (parent root) ((subroot (build-path (o@ parent 'root) root)))
          (parent)
@@ -64,7 +64,7 @@
 
 (define global-storage
   (lets subpath = (lambda (self path) (build-path (o@ self 'root) path))
-        (object-new '()
+        (object '()
           (method-table self
             (root () ".")
             (get (path) (storage-get (subpath self path)))
