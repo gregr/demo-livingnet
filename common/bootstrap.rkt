@@ -10,10 +10,6 @@
   racket/function
   )
 
-; TODO: IPC
-; bi-directional
-;   sockets(values)
-
 (define port/input
   (class _ (in) () ()
     (close () (close-input-port in))
@@ -28,6 +24,7 @@
     (port () out)))
 (define channel/input (class _ (in) () () (get () (read/no-eof in))))
 (define channel/output (class _ (out) () () (put (value) (write value out))))
+(define (socket getter putter) (object '(getter putter)))
 
 (define global-console
   (object (list (port/input (current-input-port))
