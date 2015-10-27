@@ -35,10 +35,10 @@
 
 (define global-network
   (let ((connection (class _ (conn) () ()
-                      (shutdown () (network-shutdown conn))
                       (close () (network-close conn))
-                      (send (value) (network-send conn value))
-                      (recv () (network-recv conn)))))
+                      (delete () (network-shutdown conn))
+                      (put (value) (network-send conn value))
+                      (get () (network-recv conn)))))
     (object '()
       (method-table _
         (listen () (connection (network-listen)))
@@ -76,8 +76,8 @@
 
 (def (download net hostname request)
   conn = (o@ net 'connect hostname)
-  _ = (o@ conn 'send request)
-  response = (o@ conn 'recv)
+  _ = (o@ conn 'put request)
+  response = (o@ conn 'get)
   _ = (o@ conn 'close)
   response)
 
