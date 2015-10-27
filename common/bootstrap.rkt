@@ -45,14 +45,17 @@
         (listen () (connection (network-listen)))
         (connect (hostname) (connection (network-connect hostname)))))))
 
-; TODO:
-; read-only/write-only caps?
+(define read-only-mixin
+  (object-new '() (method-table __ (put _ (void)) (delete _ (void)))))
+(define write-only-mixin
+  (object-new '() (method-table __ (get _ (void)))))
+(define (read-only parent) (object-new (list parent read-only-mixin)))
+(define (write-only parent) (object-new (list parent write-only-mixin)))
+(define storage/sub
+  (class _ (parent root) ((subroot (build-path (o@ parent 'root) root)))
+         (parent)
+    (root () subroot)))
 
-(define storage
-  (class _ (parent root) ((subpath (lambda (path) (build-path root path)))) ()
-    (get (path) (o@ parent 'get (subpath path)))
-    (put (path value) (o@ parent 'put (subpath path) value))
-    (delete (path) (o@ parent 'delete (subpath path)))))
 (define file
   (class _ (storage path) () ()
     (get () (o@ storage 'get path))
@@ -60,12 +63,14 @@
     (delete () (o@ storage 'delete path))))
 
 (define global-storage
-  (object-new '()
-    (method-table _
-      (get (path) (storage-get path))
-      (put (path value) (storage-put path value))
-      (delete (path) (storage-delete path)))))
-(define global-filesystem (storage global-storage "data"))
+  (lets subpath = (lambda (self path) (build-path (o@ self 'root) path))
+        (object-new '()
+          (method-table self
+            (root () ".")
+            (get (path) (storage-get (subpath self path)))
+            (put (path value) (storage-put (subpath self path) value))
+            (delete (path) (storage-delete (subpath self path)))))))
+(define global-filesystem (storage/sub global-storage "data"))
 (define master-boot-record (file global-storage "master-boot-record"))
 
 (def (download net hostname request)
@@ -114,8 +119,8 @@
     ; TODO: application-specific eval
     ((eval code) (hostname->context hostname))))
 
-(define cache/get-fsys (storage global-filesystem "cache/get"))
-(define cache/negotiate-fsys (storage global-filesystem "cache/negotiate"))
+(define cache/get-fsys (storage/sub global-filesystem "cache/get"))
+(define cache/negotiate-fsys (storage/sub global-filesystem "cache/negotiate"))
 (define global-negotiate
   (negotiate global-network cache/negotiate-fsys (const (void))))
 
@@ -123,7 +128,7 @@
   (hash 'console global-console
         'network global-network
         'storage global-storage
-        'filesystem (storage global-filesystem "application-data")
+        'filesystem (storage/sub global-filesystem "application-data")
         ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
         'get-other (get-other global-network cache/get-fsys)
         'negotiate global-negotiate
