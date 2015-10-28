@@ -43,6 +43,20 @@
 
 (define ((network-connector network host)) (o@ network 'connect host))
 
+(define (network-serve network serve)
+  (letn loop (values) = (values)
+    conn = (o@ network 'accept)
+    _ = (thread (thunk (serve conn)))
+    (loop)))
+(define ((serve-requests request->response) conn)
+  (letn loop (values) = (values)
+    request = (o@ conn 'get)
+    (unless (void? request)
+      (o@ conn 'put (request->response request))
+      (loop))))
+(define (network-serve-requests network request->response)
+  (network-serve network (serve-requests request->response)))
+
 (define (read-only parent)
   (object '() (method-table _ (get args (o@* parent 'get args)))))
 (define (write-only parent)
