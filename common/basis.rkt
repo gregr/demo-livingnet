@@ -48,9 +48,13 @@
     (thunk (system
              (format "mkdir -p \"$(dirname '~a')\" && touch '~a' && cat < '~a'"
                      path path path)))))
-(define (blocking-write path str)
-  (system (format "mkdir -p \"$(dirname '~a')\" && printf \"%s\n\" '~a' > ~a"
-                  path str path)))
+(def (blocking-write path str)
+  (list pout pin _ perr _) =
+  (process (format "mkdir -p \"$(dirname '~a')\" && cat > '~a'" path path))
+  (begin (displayln str pin)
+         (close-output-port pin)
+         (close-input-port pout)
+         (close-input-port perr)))
 
 (define (read/no-eof in) (match (read in)
                            ((? eof-object?) (void))
