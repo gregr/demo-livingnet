@@ -99,6 +99,7 @@
   (define conn (network-connect hostname))
   (network-send conn #f)
   (define bootstrap (network-recv conn))
+  (network-shutdown conn)
   (network-close conn)
   (eval bootstrap))
 ;(define (bootstrap/default bootstrap-hostname-default)
