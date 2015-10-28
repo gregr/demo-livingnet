@@ -5,7 +5,7 @@
   bootstrap/remote
   launch-and-forget
   machine-name
-  network-listen
+  network-accept
   network-connect
   network-shutdown
   network-close
@@ -67,7 +67,7 @@
 (define wan-path (build-path dir-wan machine-name))
 
 (record connection wd in out)
-(define (network-listen)
+(define (network-accept)
   (unless (file-exists? wan-path) (system (path->string path-network-listen)))
   (define conn-wd (read/file wan-path))
   (connection conn-wd (build-path conn-wd "out") (build-path conn-wd "in")))
@@ -103,7 +103,7 @@
     ;(mbr (eval mbr))))
 
 (define (test-serve motd bootstrap-program)
-  (define conn (network-listen))
+  (define conn (network-accept))
   (define request (network-recv conn))
   (if request
     (begin

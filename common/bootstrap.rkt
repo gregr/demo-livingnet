@@ -38,7 +38,7 @@
                       (get () (network-recv conn)))))
     (object '()
       (method-table _
-        (listen () (connection (network-listen)))
+        (accept () (connection (network-accept)))
         (connect (hostname) (connection (network-connect hostname)))))))
 
 (define ((network-connector network host)) (o@ network 'connect host))
