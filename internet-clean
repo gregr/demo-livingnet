@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+inet_dir="$here/internet"
+
+rm -r "$inet_dir"
+mkdir "$inet_dir"
+"$here/internet-prepare"
