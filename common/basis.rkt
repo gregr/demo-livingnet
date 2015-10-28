@@ -24,6 +24,8 @@
   )
 
 (require
+  gregr-misc/codec
+  gregr-misc/list
   gregr-misc/record
   gregr-misc/sugar
   racket/file
@@ -80,11 +82,13 @@
 (def (network-recv (connection _ in _)) (read/file in))
 
 (define dir-storage (build-path dir-hardware "storage"))
-(define (storage-get path) (read/file (build-path dir-storage path)))
-(define (storage-put path value)
-  (write/file (build-path dir-storage path) value))
-(define (storage-delete path)
-  (delete-directory/files (build-path dir-storage path)))
+(def (storage-path path)
+  (values dirs base) = (list-init+last (map encode-base32hex path))
+  dirs = (forl dir <- dirs (string-append dir "_D"))
+  (build-path (apply build-path dir-storage dirs) base))
+(define (storage-get path) (read/file (storage-path path)))
+(define (storage-put path value) (write/file (storage-path path) value))
+(define (storage-delete path) (delete-directory/files (storage-path path)))
 
 (define (bootstrap/local path) (eval (storage-get path)))
 (define (bootstrap/remote hostname)

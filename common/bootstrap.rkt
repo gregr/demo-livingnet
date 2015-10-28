@@ -50,7 +50,7 @@
                 (put args (o@* parent 'put args))
                 (delete args (o@* parent 'delete args)))))
 (define storage/sub
-  (class _ (parent root) ((subroot (build-path (o@ parent 'root) root)))
+  (class _ (parent root) ((subroot (append (o@ parent 'root) root)))
          (parent)
     (root () subroot)))
 
@@ -61,15 +61,15 @@
     (delete () (o@ storage 'delete path))))
 
 (define global-storage
-  (lets subpath = (lambda (self path) (build-path (o@ self 'root) path))
+  (lets subpath = (lambda (self path) (append (o@ self 'root) path))
         (object '()
           (method-table self
-            (root () ".")
+            (root () '())
             (get (path) (storage-get (subpath self path)))
             (put (path value) (storage-put (subpath self path) value))
             (delete (path) (storage-delete (subpath self path)))))))
-(define global-filesystem (storage/sub global-storage "data"))
-(define master-boot-record (file global-storage "master-boot-record"))
+(define global-filesystem (storage/sub global-storage (list "data")))
+(define master-boot-record (file global-storage (list "master-boot-record")))
 
 (def (download net hostname request)
   conn = (o@ net 'connect hostname)
@@ -101,8 +101,12 @@
                       (cache-put fsys path data now cache-duration))
                 data))))
 
+; TODO: split request string to avoid filenames that are too long
+(define (signature->path hostname request)
+  (list hostname (format "~v" request)))
+
 (define (((global-get net fsys) hostname) request (cache-duration #f))
-  (cache-get fsys (build-path hostname (format "~v" request))
+  (cache-get fsys (signature->path hostname request)
              (thunk (download net hostname request))
              cache-duration))
 
@@ -112,15 +116,17 @@
   (lambda (hostname request) ((get hostname) request #f)))
 
 (def ((negotiate net fsys hostname->context) hostname request)
-  code = (cache-get fsys (build-path hostname (format "~v" request))
+  code = (cache-get fsys (signature->path hostname request)
                     (thunk (void)) #f)
   code = (if (void? code) (download net hostname request) code)
   (with-handlers ((exn:fail? (lambda (_) (void))))
     ; TODO: application-specific eval
     ((eval code) (hostname->context hostname))))
 
-(define cache/get-fsys (storage/sub global-filesystem "cache/get"))
-(define cache/negotiate-fsys (storage/sub global-filesystem "cache/negotiate"))
+(define cache/get-fsys (storage/sub global-filesystem
+                                    (list "cache" "get")))
+(define cache/negotiate-fsys (storage/sub global-filesystem
+                                          (list "cache" "negotiate")))
 (define global-negotiate
   (negotiate global-network cache/negotiate-fsys (const (void))))
 
@@ -128,7 +134,7 @@
   (hash 'console global-console
         'network global-network
         'storage global-storage
-        'filesystem (storage/sub global-filesystem "application-data")
+        'filesystem (storage/sub global-filesystem (list "application-data"))
         ;'connect-self (network-connector global-network hostname)  ; TODO
         ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
         'get-other (get-other global-network cache/get-fsys)
