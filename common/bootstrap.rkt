@@ -160,23 +160,20 @@
   (hash-ref cap-hash cap-key (thunk (void))))
 (define global-context (hash->context global-capabilities))
 
-(define ((resolve-dependencies eval get) finished goals)
-  (let loop ((seen (set)) (pending '()) (targets goals))
-    (match targets
-      ((cons target targets)
-       (if (or (hash-has-key? finished target) (set-member? seen target))
-         (loop seen pending targets)
-         (lets (list deps code) = (get target)
-               seen = (set-add seen target)
-               pending = (list* (list target deps code) pending)
-               (loop seen pending (append deps targets)))))
-      ('() (lets finished =
-                 (forf finished = finished
-                       (list target deps code) <- pending
-                       val = (apply (eval code)
-                                    (map (curry hash-ref finished) deps))
-                       (hash-set finished target val))
-                 (values finished (map (curry hash-ref finished) goals)))))))
+(def ((resolve-dependencies eval get) finished goals)
+  (values _ finished) =
+  (let loop ((seen (set)) (finished finished) (targets goals))
+    (forf seen = seen finished = finished target <- targets
+          (if (hash-has-key? finished) (values seen finished)
+            (if (set-member? seen target)
+              (values seen (hash-set finished target (void)))  ; circular
+              (lets (list deps code) = (get target)
+                    (values seen finished) =
+                    (loop (set-add seen target) finished deps)
+                    val = (apply (eval code)
+                                 (map (curry hash-ref finished) deps))
+                    (values seen (hash-set finished target val)))))))
+  (values finished (map (curry hash-ref finished) goals)))
 
 ; TODO: more sophisticated authority management
 ; capability guardedness spectrum
