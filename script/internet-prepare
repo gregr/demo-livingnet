@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+machines_dir="$here/../machines"
+inet_dir="$here/../internet"
+
+cd "$machines_dir" && "$here/../common/wan-prepare" "$inet_dir"
+cd "$here"
