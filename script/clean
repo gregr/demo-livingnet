@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+shopt -s failglob
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+src_dir="$here/../src"
+machines_dir="$here/../machines"
+
+rm -rf "$machines_dir"
+mkdir "$machines_dir"
+
+for service in "$src_dir/special-service/"* "$src_dir/service/"*; do
+  printf "found: %s\n" "$service"
+  service_dir="$machines_dir/$( basename "$service" )"
+  "$here/machine-new" "$service_dir"
+  cp "$src_dir/common/"* "$service_dir/"
+done
+
+for service in "$src_dir/special-service/"*; do
+  service_dir="$machines_dir/$( basename "$service" )"
+  cp "$service/"* "$service_dir/"
+done
+
+for service in "$src_dir/service/"*; do
+  service_dir="$machines_dir/$( basename "$service" )"
+  cp "$service" "$service_dir/lib.rkts"
+done
+
+"$here/internet-clean"
