@@ -166,29 +166,37 @@
   (object (list (port/input (current-input-port))
                 (port/output (current-output-port))))
 
-  global-context
-  (port/input port/output file storage/sub get-other negotiate global-network
-   global-filesystem global-console)
-  ((lambda ()
-     (define application-fsys
-       (storage/sub global-filesystem (list "application-data")))
-     (define cache/get-fsys
-       (storage/sub global-filesystem (list "cache" "get")))
-     (define cache/negotiate-fsys
-       (storage/sub global-filesystem (list "cache" "negotiate")))
-     (define global-negotiate
-       (negotiate global-network cache/negotiate-fsys (const (void))))
-
-     (define global-capabilities
-       (hash 'console global-console
-             'network global-network
-             'storage global-filesystem
-             'filesystem application-fsys
-             ;'connect-self (network-connector global-network hostname)  ; TODO
-             ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
-             'get-other (get-other global-network cache/get-fsys)
-             'negotiate global-negotiate
-             ))
-     (define ((hash->context cap-hash) cap-key)
-       (hash-ref cap-hash cap-key (thunk (void))))
-     (hash->context global-capabilities))))
+ global-negotiator
+ (port/input port/output file storage/sub get-other negotiate global-network
+  global-storage global-console)
+ (let ()
+   (define application-fsys
+     (storage/sub global-filesystem (list "application-data")))
+   (define cache/get-fsys
+     (storage/sub global-filesystem (list "cache" "get")))
+   (define cache/negotiate-fsys
+     (storage/sub global-filesystem (list "cache" "negotiate")))
+   (define negotiator
+     (class _ (host->ctx)
+            ((neg (negotiate global-network cache/negotiate-fsys host->ctx)))
+            ()
+            (host->context () host->ctx)
+            (negotiate (host request) (neg host request))))
+   (define ((hash->context cap-hash) cap-key)
+     (hash-ref cap-hash cap-key (thunk (void))))
+   (define (host->context (console global-console)
+                          (parent-fsys application-fsys)
+                          (h->ctx #f))
+     (define (host->ctx host)
+       (define host-fsys (storage/sub parent-fsys (list host)))
+       (define capabilities
+         (hash 'console console
+               'filesystem host-fsys
+               'connect-self (network-connector global-network host)
+               ; TODO: get-x with resolution built-in?
+               'get-self (get-self global-network cache/get-fsys host)
+               'get-other (get-other global-network cache/get-fsys)
+               'negotiator (negotiator (or h->ctx host->ctx))))
+       (hash->context capabilities))
+     host->ctx)
+   (negotiator host->context)))
