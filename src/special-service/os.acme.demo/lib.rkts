@@ -1,0 +1,196 @@
+(resolve-dependencies ()
+  (lambda (eval get)
+    (fn ( finished goals)
+        (values _ finished) =
+        (let loop ((seen (set)) (finished finished) (targets goals))
+          (forf seen = seen finished = finished target <- targets
+                (if (hash-has-key? finished) (values seen finished)
+                  (if (set-member? seen target)
+                    ; TODO: resolve circular dependencies via fix*?
+                    (values seen (hash-set finished target (void)))
+                    (lets (list deps code) = (get target)
+                          (values seen finished) =
+                          (loop (set-add seen target) finished deps)
+                          val = (apply (eval code)
+                                       (map (curry hash-ref finished) deps))
+                          (values seen (hash-set finished target val)))))))
+        (values finished (map (curry hash-ref finished) goals))))
+
+  network-connector ()
+  (lambda (network host) (thunk (o@ network 'connect host)))
+
+  network-serve ()
+  (lambda (network serve)
+    (letn loop (values) = (values)
+          conn = (o@ network 'accept)
+          _ = (thread (thunk (serve conn)))
+          (loop)))
+  serve-requests ()
+  (lambda (request->response)
+    (lambda (conn)
+      (letn loop (values) = (values)
+            request = (o@ conn 'get)
+            (unless (void? request)
+              (o@ conn 'put (request->response request))
+              (loop)))))
+  network-serve-requests (network-serve serve-requests)
+  (lambda (network request->response)
+    (network-serve network (serve-requests request->response)))
+
+  port/input ()
+  (class _ (in) () ()
+         (close () (close-input-port in))
+         (get-char () (read-char in))
+         (get-line () (read-line in))
+         (port () in))
+  port/output ()
+  (class _ (out) () ()
+         (close () (close-output-port out))
+         (put (value) (display value out))
+         (put-line (value) (displayln value out))
+         (port () out))
+  channel/input ()
+  (class _ (in) () () (get () (read/no-eof in)))
+  channel/output ()
+  (class _ (out) () () (put (value) (write value out)))
+  socket ()
+  (lambda (getter putter) (object '(getter putter)))
+
+  file ()
+  (class _ (storage path) () ()
+         (get () (o@ storage 'get path))
+         (put (value) (o@ storage 'put path value))
+         (delete () (o@ storage 'delete path)))
+
+  read-only ()
+  (lambda (parent)
+    (object '() (method-table _ (get args (o@* parent 'get args)))))
+  write-only ()
+  (lambda (parent)
+    (object '() (method-table _
+                              (put args (o@* parent 'put args))
+                              (delete args (o@* parent 'delete args)))))
+  storage/sub ()
+  (class _ (parent root) ((subroot (append (o@ parent 'root) root)))
+         (parent)
+         (root () subroot))
+
+  download ()
+  (fn (net hostname request)
+      conn = (o@ net 'connect hostname)
+      _ = (o@ conn 'put request)
+      response = (o@ conn 'get)
+      _ = (o@ conn 'delete)
+      ; TODO: faithful implementation would 'get' until response is void
+      _ = (o@ conn 'close)
+      response)
+
+  cache-put ()
+  (lambda (fsys path data time-added cache-duration)
+    (o@ fsys 'put path (list time-added cache-duration data)))
+  cache-get ()
+  (lambda (fsys path origin-get cache-duration)
+    (lets now = (current-seconds)
+          cache-entry = (o@ fsys 'get path)
+          (values cached? data) =
+          (if (void? cache-entry)
+            (values #f (void))
+            (lets (list time-added duration data) = cache-entry
+                  cache-duration =
+                  (if cache-duration
+                    (if duration (min duration cache-duration)
+                      cache-duration)
+                    duration)
+                  (if (and duration (<= (+ time-added duration) now))
+                    (values #f (void)) (values #t data))))
+          (if cached? data
+            (lets data = (origin-get)
+                  _ = (unless (void? data)
+                        (cache-put fsys path data now cache-duration))
+                  data))))
+  ; TODO: split request string to avoid filenames that are too long
+  signature->path ()
+  (lambda (hostname request) (list hostname (format "~v" request)))
+
+  global-get (cache-get signature->path)
+  (lambda (net fsys)
+    (lambda (hostname)
+      (lambda (request (cache-duration #f))
+        (cache-get fsys (signature->path hostname request)
+                   (thunk (download net hostname request))
+                   cache-duration))))
+  get-self (global-get)
+  (lambda (net fsys hostname) ((global-get net fsys) hostname))
+  get-other (global-get)
+  (lambda (net fsys)
+    (define get (global-get net fsys))
+    (lambda (hostname request) ((get hostname) request #f)))
+
+  negotiate (download cache-get signature->path)
+  (lambda (net fsys hostname->context)
+    (fn (hostname request)
+        code = (cache-get fsys (signature->path hostname request)
+                          (thunk (void)) #f)
+        code = (if (void? code) (download net hostname request) code)
+        (with-handlers ((exn:fail? (lambda (_) (void))))
+                       ; TODO: application-specific eval
+                       ((eval code) (hostname->context hostname)))))
+
+  global-context
+  (port/input port/output file storage/sub get-other negotiate)
+  ((lambda ()
+     (define global-storage
+       (lets subpath = (lambda (self path) (append (o@ self 'root) path))
+             (object
+               '()
+               (method-table
+                 self
+                 (root () '())
+                 (get (path) (storage-get (subpath self path)))
+                 (put (path value) (storage-put (subpath self path) value))
+                 (delete (path) (storage-delete (subpath self path)))))))
+     (define global-filesystem (storage/sub global-storage (list "data")))
+     (define master-boot-record
+       (file global-storage (list "master-boot-record")))
+     ; TODO: write to mbr
+     ; servers vs. users
+
+     (define global-network
+       (let ((connection (class _ (conn) () ()
+                                (close () (network-close conn))
+                                (delete () (network-shutdown conn))
+                                (put (value) (network-send conn value))
+                                (get () (network-recv conn)))))
+         (object
+           '()
+           (method-table
+             _
+             (accept () (connection (network-accept)))
+             (connect (hostname) (connection (network-connect hostname)))))))
+
+     (define application-fsys
+       (storage/sub global-filesystem (list "application-data")))
+     (define cache/get-fsys
+       (storage/sub global-filesystem (list "cache" "get")))
+     (define cache/negotiate-fsys
+       (storage/sub global-filesystem (list "cache" "negotiate")))
+     (define global-negotiate
+       (negotiate global-network cache/negotiate-fsys (const (void))))
+
+     (define global-console
+       (object (list (port/input (current-input-port))
+                     (port/output (current-output-port)))))
+
+     (define global-capabilities
+       (hash 'console global-console
+             'network global-network
+             'storage global-filesystem
+             'filesystem application-fsys
+             ;'connect-self (network-connector global-network hostname)  ; TODO
+             ;'get-self (get-self global-network cache/get-fsys hostname)  ; TODO
+             'get-other (get-other global-network cache/get-fsys)
+             'negotiate global-negotiate
+             ))
+     (define ((hash->context cap-hash) cap-key)
+       (hash-ref cap-hash cap-key (thunk (void))))
+     (hash->context global-capabilities))))
