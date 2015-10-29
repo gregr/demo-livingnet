@@ -1,20 +1,20 @@
 (resolve-dependencies ()
-  (lambda (eval get)
-    (fn (finished goals)
-        (values _ finished) =
-        (let loop ((seen (set)) (finished finished) (targets goals))
-          (forf seen = seen finished = finished target <- targets
-                (if (hash-has-key? finished) (values seen finished)
-                  (if (set-member? seen target)
-                    ; TODO: resolve circular dependencies via fix*?
-                    (values seen (hash-set finished target (void)))
-                    (lets (list deps code) = (get target)
-                          (values seen finished) =
-                          (loop (set-add seen target) finished deps)
-                          val = (apply (eval code)
-                                       (map (curry hash-ref finished) deps))
-                          (values seen (hash-set finished target val)))))))
-        (values finished (map (curry hash-ref finished) goals))))
+ (lambda (get)
+   (define (to-sym val) (string->symbol (~a val)))
+   (fn (goals)
+       (values _ finished) =
+       (let loop ((seen (set)) (finished '()) (localhost #f) (targets goals))
+         (forf seen = seen finished = finished target <- targets
+               (list host stgt) = target
+               host = (or host localhost)
+               (if (set-member? seen target) (values seen finished)
+                 (lets (list deps code) = (get host stgt)
+                       (values seen finished) =
+                       (loop (set-add seen target) finished host deps)
+                       binding = `(,(to-sym target)
+                                    (,code ,@((map to-sym deps))))
+                       (values seen (list* binding finished))))))
+       `(let* ,@(reverse finished) ,(map to-sym goals))))
 
   network-connector ()
   (lambda (network host) (thunk (o@ network 'connect host)))
