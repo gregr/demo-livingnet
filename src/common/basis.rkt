@@ -61,7 +61,8 @@
                            (result result)))
 (define (read/string str) (read/no-eof (open-input-string str)))
 (define (read/file path) (read/string (blocking-read path)))
-(define (write/string value) (call-with-output-string (curry write value)))
+(define (write/string value)
+  (if (void? value) "" (call-with-output-string (curry write value))))
 (define (write/file path value) (blocking-write path (write/string value)))
 
 (define ((launch-and-forget cmd) arg) (system (string-append cmd " " arg " &")))
