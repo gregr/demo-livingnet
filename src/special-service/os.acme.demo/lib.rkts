@@ -136,38 +136,40 @@
                        ; TODO: application-specific eval
                        ((eval code) (hostname->context hostname)))))
 
+  global-network ()
+  (let ((connection (class _ (conn) () ()
+                           (close () (network-close conn))
+                           (delete () (network-shutdown conn))
+                           (put (value) (network-send conn value))
+                           (get () (network-recv conn)))))
+    (object
+      '()
+      (method-table
+        _
+        (accept () (connection (network-accept)))
+        (connect (hostname) (connection (network-connect hostname))))))
+  global-storage ()
+  (lets subpath = (lambda (self path) (append (o@ self 'root) path))
+        (object
+          '()
+          (method-table
+            self
+            (root () '())
+            (get (path) (storage-get (subpath self path)))
+            (put (path value) (storage-put (subpath self path) value))
+            (delete (path) (storage-delete (subpath self path))))))
+  master-boot-record (file global-storage)
+  (file global-storage (list "master-boot-record"))
+  global-filesystem (storage/sub global-storage)
+  (storage/sub global-storage (list "data"))
+  global-console (port/input port/output)
+  (object (list (port/input (current-input-port))
+                (port/output (current-output-port))))
+
   global-context
-  (port/input port/output file storage/sub get-other negotiate)
+  (port/input port/output file storage/sub get-other negotiate global-network
+   global-filesystem global-console)
   ((lambda ()
-     (define global-storage
-       (lets subpath = (lambda (self path) (append (o@ self 'root) path))
-             (object
-               '()
-               (method-table
-                 self
-                 (root () '())
-                 (get (path) (storage-get (subpath self path)))
-                 (put (path value) (storage-put (subpath self path) value))
-                 (delete (path) (storage-delete (subpath self path)))))))
-     (define global-filesystem (storage/sub global-storage (list "data")))
-     (define master-boot-record
-       (file global-storage (list "master-boot-record")))
-     ; TODO: write to mbr
-     ; servers vs. users
-
-     (define global-network
-       (let ((connection (class _ (conn) () ()
-                                (close () (network-close conn))
-                                (delete () (network-shutdown conn))
-                                (put (value) (network-send conn value))
-                                (get () (network-recv conn)))))
-         (object
-           '()
-           (method-table
-             _
-             (accept () (connection (network-accept)))
-             (connect (hostname) (connection (network-connect hostname)))))))
-
      (define application-fsys
        (storage/sub global-filesystem (list "application-data")))
      (define cache/get-fsys
@@ -176,10 +178,6 @@
        (storage/sub global-filesystem (list "cache" "negotiate")))
      (define global-negotiate
        (negotiate global-network cache/negotiate-fsys (const (void))))
-
-     (define global-console
-       (object (list (port/input (current-input-port))
-                     (port/output (current-output-port)))))
 
      (define global-capabilities
        (hash 'console global-console
