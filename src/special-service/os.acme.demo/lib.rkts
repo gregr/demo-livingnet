@@ -1,6 +1,6 @@
 (resolve-dependencies ()
   (lambda (eval get)
-    (fn ( finished goals)
+    (fn (finished goals)
         (values _ finished) =
         (let loop ((seen (set)) (finished finished) (targets goals))
           (forf seen = seen finished = finished target <- targets

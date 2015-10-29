@@ -33,8 +33,28 @@
      ,@module-body))
 
 (define lib (read/file "lib.rkts"))
-(eval (lib->module 'lib '(global-context) lib))
+(define provisions
+  '(global-context
+    network-serve-requests
+    ))
+(eval (lib->module 'lib provisions lib))
 (require 'lib)
+(define net (global-context 'network))
 (define fsys (global-context 'filesystem))
-(displayln fsys)
-(displayln (format "~v" (lib->package lib)))
+
+(for_ (cons name data) <- (lib->package lib)
+      (o@ fsys 'put (list "lib" name) data))
+
+(define (request->response request)
+  (displayln (format "received request: ~v" request))
+  (if request
+    (lets
+      val = (o@ fsys 'get (list "lib" request))
+      _ = (displayln (format "serving: ~v" val))
+      val)
+    (begin
+      (displayln "serving OS installation")
+      "OS installation")))
+
+(displayln "accepting connections")
+(network-serve-requests net request->response)
