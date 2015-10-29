@@ -8,6 +8,8 @@
   gregr-misc/oop
   gregr-misc/sugar
   racket/function
+  racket/match
+  racket/set
   )
 
 (define port/input
@@ -157,6 +159,24 @@
 (define ((hash->context cap-hash) cap-key)
   (hash-ref cap-hash cap-key (thunk (void))))
 (define global-context (hash->context global-capabilities))
+
+(define ((resolve-dependencies eval get) finished goals)
+  (let loop ((seen (set)) (pending '()) (targets goals))
+    (match targets
+      ((cons target targets)
+       (if (or (hash-has-key? finished target) (set-member? seen target))
+         (loop seen pending targets)
+         (lets (list deps code) = (get target)
+               seen = (set-add seen target)
+               pending = (list* (list target deps code) pending)
+               (loop seen pending (append deps targets)))))
+      ('() (lets finished =
+                 (forf finished = finished
+                       (list target deps code) <- pending
+                       val = (apply (eval code)
+                                    (map (curry hash-ref finished) deps))
+                       (hash-set finished target val))
+                 (values finished (map (curry hash-ref finished) goals)))))))
 
 ; TODO: more sophisticated authority management
 ; capability guardedness spectrum
