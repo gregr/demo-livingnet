@@ -168,7 +168,7 @@
 
  global-negotiator
  (port/input port/output file storage/sub get-other negotiate global-network
-  global-storage global-console)
+  global-filesystem global-console)
  (let ()
    (define application-fsys
      (storage/sub global-filesystem (list "application-data")))
