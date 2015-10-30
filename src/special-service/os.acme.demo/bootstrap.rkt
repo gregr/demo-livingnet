@@ -91,7 +91,7 @@
 (define (request->response request)
   (displayln (format "received request: ~v" request))
   (define response
-    (if request (o@ fsys 'get (list "lib" request)) bootstrap-os))
+    (if request (o@ fsys 'get (list* "lib" request)) bootstrap-os))
   (displayln (format "serving: ~v" response))
   response)
 
