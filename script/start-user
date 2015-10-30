@@ -1,0 +1,8 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+user_dir="$here/../machines/user0"
+
+cd "$user_dir"
+exec racket bootstrap.rkt
