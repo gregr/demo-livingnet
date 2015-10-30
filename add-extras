@@ -2,7 +2,7 @@
 set -eufo pipefail
 
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-extras="$here/extras"
+extras_dir="$here/machines/user0/extras"
 fill() { printf "%s" "$1"; }
 mkdir -p "$extras"
 
