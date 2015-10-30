@@ -1,6 +1,6 @@
 #lang racket/base
 (provide
-  ;bootstrap/default
+  bootstrap/default
   bootstrap/local
   bootstrap/remote
   launch-and-forget
@@ -26,6 +26,7 @@
 (require
   gregr-misc/codec
   gregr-misc/list
+  gregr-misc/oop
   gregr-misc/record
   gregr-misc/sugar
   racket/file
@@ -103,10 +104,10 @@
   (network-shutdown conn)
   (network-close conn)
   (eval bootstrap))
-;(define (bootstrap/default bootstrap-hostname-default)
-  ;(match (storage-mbr-get)
-    ;((? void?) (bootstrap/remote bootstrap-hostname-default))
-    ;(mbr (eval mbr))))
+(define (bootstrap/default bootstrap-hostname-default)
+  (match (storage-get (list "master-boot-record"))
+    ((? void?) (bootstrap/remote bootstrap-hostname-default))
+    (mbr (eval mbr))))
 
 (define (test-serve motd bootstrap-program)
   (define conn (network-accept))
