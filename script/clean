@@ -16,7 +16,6 @@ for service in "$src_dir/special-service/"* "$src_dir/service/"*; do
   service_name="$( basename "$service" )"
   service_dir="$machines_dir/$service_name"
   "$here/machine-new" "$service_dir"
-  cp "$src_dir/common/"* "$service_dir/"
   printf "%s\n" "$service_name" >> "$remotes"
 done
 

@@ -1,9 +1,12 @@
 #!/bin/bash
-set -eufo pipefail
+set -euo pipefail
+shopt -s failglob
 
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 machine_dir="$1"
+src_dir="$here/../src"
 
 mkdir -p "$machine_dir"
 cd "$machine_dir"
 "$here/machine-prepare"
+cp "$src_dir/common/"* "$machine_dir/"
