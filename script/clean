@@ -5,15 +5,19 @@ shopt -s failglob
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="$here/../src"
 machines_dir="$here/../machines"
+remotes="$here/../remotes"
+printf "%s" '' > "$remotes"
 
 rm -rf "$machines_dir"
 mkdir "$machines_dir"
 
 for service in "$src_dir/special-service/"* "$src_dir/service/"*; do
   printf "found: %s\n" "$service"
-  service_dir="$machines_dir/$( basename "$service" )"
+  service_name="$( basename "$service" )"
+  service_dir="$machines_dir/$service_name"
   "$here/machine-new" "$service_dir"
   cp "$src_dir/common/"* "$service_dir/"
+  printf "%s\n" "$service_name" >> "$remotes"
 done
 
 for service in "$src_dir/special-service/"*; do

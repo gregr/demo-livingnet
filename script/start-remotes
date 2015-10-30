@@ -1,0 +1,12 @@
+#!/bin/bash
+set -eufo pipefail
+
+here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+remotes="$here/../remotes"
+
+while read remote; do
+  remote_dir="$here/../machines/$remote"
+  cd "$here/../machines/$remote"
+  racket bootstrap.rkt &> "$remote_dir/log.txt" &
+done < "$remotes"
+wait
