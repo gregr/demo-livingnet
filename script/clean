@@ -29,4 +29,7 @@ for service in "$src_dir/service/"*; do
   cp "$service" "$service_dir/lib.rkts"
 done
 
+user_dir="$machines_dir/user0"
+"$here/machine-new" "$user_dir"
+
 "$here/internet-clean"
