@@ -1,6 +1,6 @@
 (resolve-dependencies ()
  (lambda (get)
-   (define (to-sym val) (string->symbol (~a val)))
+   (define (to-sym val) (string->symbol (format "~a" val)))
    (fn (goals)
        (values _ finished) =
        (let loop ((seen (set)) (finished '()) (localhost #f) (targets goals))
@@ -12,9 +12,9 @@
                        (values seen finished) =
                        (loop (set-add seen target) finished host deps)
                        binding = `(,(to-sym target)
-                                    (,code ,@((map to-sym deps))))
+                                    (,code ,@(map to-sym deps)))
                        (values seen (list* binding finished))))))
-       `(let* ,@(reverse finished) ,(map to-sym goals))))
+       `(let* ,(reverse finished) (list ,@(map to-sym goals)))))
 
   network-connector ()
   (lambda (network host) (thunk (o@ network 'connect host)))
