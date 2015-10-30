@@ -3,6 +3,8 @@ set -eufo pipefail
 
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-mkdir -p "$here/hardware"
-mkdir -p "$here/extras"
-exec racket boot.rkt
+printf "%s\n" 'starting remote machines'
+"$here/script/start-remotes" &
+sleep 5
+printf "%s\n" 'starting user machine'
+exec "$here/script/start-user"
