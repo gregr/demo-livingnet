@@ -73,9 +73,10 @@
        `(lets ,@',(deps->bindings '(global-console global-filesystem))
               console = global-console
               fsys = global-filesystem
-              _ = (o@ console 'put-line "loading kernel at: ~v" ',kernel-path)
+              _ = (o@ console 'put-line
+                      (format "loading kernel at: ~v" ',kernel-path))
               kernel = (o@ fsys 'get ',kernel-path)
-              _ = (o@ console 'put-line "found kernel: ~v" kernel)
+              _ = (o@ console 'put-line (format "found kernel: ~v" kernel))
               _ = (o@ console 'put-line "starting kernel")
               (eval kernel)))
      (lets _ = (displayln "in persist")
