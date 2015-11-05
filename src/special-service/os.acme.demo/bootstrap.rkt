@@ -7,16 +7,17 @@
   racket/match
   )
 
-(define (triples xs)
-  (match xs
-    ((list* name deps body xs) (list* (list name deps body) (triples xs)))
-    ('() '())))
+(define lib->package
+  '(lambda (lib)
+     (make-immutable-hash
+       (forl (list name deps body) <- (triples lib)
+             (cons name (list (forl dep <- deps (list #f dep))
+                              `(lambda ,deps ,body)))))))
 
-(define (lib->package lib)
-  (make-immutable-hash
-    (forl (list name deps body) <- (triples lib)
-          (cons name (list (forl dep <- deps (list #f dep))
-                           `(lambda ,deps ,body))))))
+(define persist-package
+  '(lambda (fsys package)
+     (for_ (values name data) <- package
+           (o@ fsys 'put (list "lib" (format "~a" name)) data))))
 
 (define (lib->module name provisions lib)
   (define module-body (forl (list name deps body) <- (triples lib)
@@ -33,9 +34,6 @@
        racket/string)
      ,@module-body))
 
-(define (persist-package fsys package)
-  (for_ (values name data) <- package
-        (o@ fsys 'put (list "lib" (format "~a" name)) data)))
 
 (define lib (read/file "input.rkts"))
 (define provisions
@@ -48,8 +46,8 @@
 (require 'lib)
 (define net global-network)
 (define fsys global-storage)
-(define package (lib->package lib))
-(persist-package fsys package)
+(define package ((eval lib->package) lib))
+((eval persist-package) fsys package)
 
 (def (get-local host request)
   _ = (when host (error "get-local applied to remote dependency: ~a, ~a"
@@ -116,8 +114,8 @@
                  (if (equal? (o@ console 'get-line) "Y")
                    (begin (o@ console 'put-line "provide library:")
                           (o@ console 'put-line "writing library to storage")
-                          (persist-package
-                            fsys (lib->package
+                          (,persist-package
+                            fsys (,lib->package
                                    (read/string (o@ console 'get-eof))))
                           (o@ console 'put-line "wrote library to storage")
                           lib-request->response)

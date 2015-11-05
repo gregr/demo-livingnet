@@ -19,8 +19,7 @@
   read/string
   write/file
   write/string
-  test-serve
-  test-boot
+  triples
   )
 
 (require
@@ -109,22 +108,7 @@
     ((? void?) (bootstrap/remote bootstrap-hostname-default))
     (mbr (eval mbr))))
 
-(define (test-serve motd bootstrap-program)
-  (define conn (network-accept))
-  (define request (network-recv conn))
-  (if request
-    (begin
-      (displayln (format "received non-bootstrap request: ~a" request))
-      (network-send conn motd))
-    (begin
-      (displayln "received bootstrap request")
-      (network-send conn bootstrap-program))))
-
-(define test-boot
-  '(begin (storage-put "boot/kernel"
-                       '(begin
-                          (displayln "bootstrapping ...")
-                          (list 'seven (+ 4 3))))
-          (storage-mbr-put '(begin (displayln "you can trust us!")
-                                   (bootstrap/local "boot/kernel")))
-          (bootstrap/default "")))
+(define (triples xs)
+  (match xs
+    ((list* name deps body xs) (list* (list name deps body) (triples xs)))
+    ('() '())))
