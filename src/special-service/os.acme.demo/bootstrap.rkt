@@ -61,7 +61,21 @@
 
 (define bootstrap-os
   `(let ()
-     (define kernel
+     (define (server-kernel request->response)
+       `(lets ,@',(deps->bindings
+                    '(global-network global-filesystem global-console
+                      network-serve-requests))
+              console = global-console
+              fsys = global-filesystem
+              _ = (o@ console 'put-line "accepting connections")
+              (network-serve-requests global-network ,request->response)))
+     (define lib-request->response
+       '(lambda (request)
+          (o@ console 'put-line (format "received request: ~v" request))
+          (define response (o@ fsys 'get (list* "lib" request)))
+          (o@ console 'put-line (format "serving: ~v" response))
+          response))
+     (define user-kernel
        `(lets ,@',(deps->bindings
                     '(global-negotiate global-console capabilities-basic))
               console = global-console
@@ -87,13 +101,34 @@
               _ = (o@ console 'put-line (format "found kernel: ~v" kernel))
               _ = (o@ console 'put-line "starting kernel")
               (eval kernel)))
-     (lets _ = (displayln "in persist")
-           ,@(deps->bindings '(global-filesystem master-boot-record))
-           _ = (displayln "built filesystem")
+     (lets ,@(deps->bindings
+               '(global-console global-filesystem master-boot-record))
+           console = global-console
+           _ = (o@ console 'put-line "built filesystem")
            fsys = global-filesystem
-           _ = (displayln (format "putting kernel in: ~v" kernel-path))
+           _ = (o@ console 'put-line "install server kernel? [Y/n]")
+           kernel =
+           (if (equal? (o@ console 'get-line) "Y")
+             (begin
+               (o@ console 'put-line
+                   "is this a library-based resource server? [Y/n]")
+               (server-kernel
+                 (if (equal? (o@ console 'get-line) "Y")
+                   (begin (o@ console 'put-line "provide library:")
+                          (o@ console 'put-line "writing library to storage")
+                          (persist-package
+                            fsys (lib->package
+                                   (read/string (o@ console 'get-eof))))
+                          (o@ console 'put-line "wrote library to storage")
+                          lib-request->response)
+                   (begin (o@ console 'put-line
+                              "provide request->response definition:")
+                          (read/string (o@ console 'get-eof))))))
+             user-kernel)
+           _ = (o@ console 'put-line
+                   (format "putting kernel in: ~v" kernel-path))
            _ = (o@ fsys 'put kernel-path kernel)
-           _ = (displayln (format "putting bootloader in mbr"))
+           _ = (o@ console 'put-line (format "putting bootloader in mbr"))
            (o@ master-boot-record 'put bootloader))))
 
 (define (request->response request)
