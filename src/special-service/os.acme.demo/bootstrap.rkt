@@ -59,13 +59,18 @@
 (define bootstrap-os
   `(let ()
      (define kernel
-       `(lets ,@',(deps->bindings '(global-negotiator global-console))
+       `(lets ,@',(deps->bindings
+                    '(global-negotiate global-console capabilities-basic))
               console = global-console
-              ntor = global-negotiator
+              ; TODO: limit eval namespace and capabilities
+              host->eval = (lambda (host)
+                             (lambda (prog)
+                               ((eval prog)
+                                (capabilities-basic host console))))
               _ = (o@ console 'put-line "kernel started")
               _ = (o@ console 'put "choose a destination: ")
               host = (o@ console 'get-line)
-              result = (o@ ntor 'negotiate host '())
+              result = ((global-negotiate (host->eval host)) host '())
               _ = (o@ console 'put-line "kernel stopping")
               result))
      (define kernel-path '("boot" "kernel"))

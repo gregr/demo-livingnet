@@ -112,29 +112,24 @@
   signature->path ()
   (lambda (hostname request) (list hostname (format "~v" request)))
 
-  global-get (cache-get signature->path)
+  get-resource (cache-get signature->path)
   (lambda (net fsys)
-    (lambda (hostname)
-      (lambda (request (cache-duration #f))
-        (cache-get fsys (signature->path hostname request)
-                   (thunk (download net hostname request))
-                   cache-duration))))
-  get-self (global-get)
-  (lambda (net fsys hostname) ((global-get net fsys) hostname))
-  get-other (global-get)
-  (lambda (net fsys)
-    (define get (global-get net fsys))
-    (lambda (hostname request) ((get hostname) request #f)))
+    (define (get host request cache-duration)
+      (cache-get fsys (signature->path host request)
+                 (thunk (download net host request)) cache-duration))
+    (lambda (self-host)
+      (lambda (host request (cache-duration #f))
+        (if (equal? self-host host)
+          (get self-host request cache-duration)
+          (get host request #f)))))
 
   negotiate (download cache-get signature->path)
-  (lambda (net fsys hostname->context)
+  (lambda (net fsys eval)
     (fn (hostname request)
         code = (cache-get fsys (signature->path hostname request)
                           (thunk (void)) #f)
         code = (if (void? code) (download net hostname request) code)
-        (with-handlers ((exn:fail? (lambda (_) (void))))
-                       ; TODO: application-specific eval
-                       ((eval code) (hostname->context hostname)))))
+        (with-handlers ((exn:fail? (lambda (_) (void)))) ((eval code)))))
 
   global-network ()
   (let ((connection (class _ (conn) () ()
@@ -166,37 +161,29 @@
   (object (list (port/input (current-input-port))
                 (port/output (current-output-port))))
 
- global-negotiator
- (port/input port/output file storage/sub get-other negotiate global-network
-  global-filesystem global-console)
+ global-get (storage/sub get-resource global-network global-filesystem)
+ (get-resource global-network (storage/sub global-filesystem
+                                           (list "cache" "get")))
+ global-negotiate (storage/sub negotiate global-network global-filesystem)
+ (curry negotiate global-network (storage/sub global-filesystem
+                                              (list "cache" "negotiate")))
+
+ capabilities->context ()
+ (lambda (cap-hash) (lambda (cap-key)
+                      (hash-ref cap-hash cap-key (thunk (void)))))
+ capabilities-basic (storage/sub global-get global-negotiate global-filesystem)
  (let ()
-   (define application-fsys
-     (storage/sub global-filesystem (list "application-data")))
-   (define cache/get-fsys
-     (storage/sub global-filesystem (list "cache" "get")))
-   (define cache/negotiate-fsys
-     (storage/sub global-filesystem (list "cache" "negotiate")))
-   (define negotiator
-     (class _ (host->ctx)
-            ((neg (negotiate global-network cache/negotiate-fsys host->ctx)))
-            ()
-            (host->context () host->ctx)
-            (negotiate (host request) (neg host request))))
-   (define ((hash->context cap-hash) cap-key)
-     (hash-ref cap-hash cap-key (thunk (void))))
-   (define (host->context (console global-console)
-                          (parent-fsys application-fsys)
-                          (h->ctx #f))
-     (define (host->ctx host)
-       (define host-fsys (storage/sub parent-fsys (list host)))
-       (define capabilities
-         (hash 'console console
-               'filesystem host-fsys
-               'connect-self (network-connector global-network host)
-               ; TODO: get-x with resolution built-in?
-               'get-self (get-self global-network cache/get-fsys host)
-               'get-other (get-other global-network cache/get-fsys)
-               'negotiator (negotiator (or h->ctx host->ctx))))
-       (hash->context capabilities))
-     host->ctx)
-   (negotiator host->context)))
+   (define (host->fsys host)
+     (storage/sub global-filesystem (list "application-data" host)))
+   (define (host->network net self-host)
+     (object '()
+             (method-table _
+                           (connect (host) (if (equal? self-host host)
+                                             (o@ net 'connect host) (void))))))
+   (define (capabilities-basic host console)
+     (hash 'console console
+           'network (host->network global-network host)
+           'filesystem (host->fsys host)
+           'get (global-get host)
+           'negotiate global-negotiate))
+   capabilities-basic))
