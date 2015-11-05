@@ -29,7 +29,8 @@
        gregr-misc/sugar
        racket/function
        racket/match
-       racket/set)
+       racket/set
+       racket/string)
      ,@module-body))
 
 (define (persist-package fsys package)
