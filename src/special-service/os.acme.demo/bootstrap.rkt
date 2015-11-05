@@ -37,7 +37,7 @@
   (for_ (values name data) <- package
         (o@ fsys 'put (list "lib" (format "~a" name)) data)))
 
-(define lib (read/file "lib.rkts"))
+(define lib (read/file "input.rkts"))
 (define provisions
   '(global-network
     global-storage

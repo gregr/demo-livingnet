@@ -26,7 +26,7 @@ done
 
 for service in "$src_dir/service/"*; do
   service_dir="$machines_dir/$( basename "$service" )"
-  cp "$service" "$service_dir/lib.rkts"
+  cp "$service" "$service_dir/input.rkts"
 done
 
 user_dir="$machines_dir/user0"
