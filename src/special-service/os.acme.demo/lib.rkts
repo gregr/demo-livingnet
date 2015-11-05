@@ -55,6 +55,8 @@
   (class _ (out) () () (put (value) (write value out)))
   socket ()
   (lambda (getter putter) (object '(getter putter)))
+  raw-ports->console (port/input port/output)
+  (lambda (in out) (object (list (port/input in) (port/output out))))
 
   file ()
   (class _ (storage path) () ()
@@ -157,9 +159,8 @@
   (file global-storage (list "master-boot-record"))
   global-filesystem (storage/sub global-storage)
   (storage/sub global-storage (list "data"))
-  global-console (port/input port/output)
-  (object (list (port/input (current-input-port))
-                (port/output (current-output-port))))
+ global-console (raw-ports->console)
+ (raw-ports->console (current-input-port) (current-output-port))
 
  global-get (storage/sub get-resource global-network global-filesystem)
  (get-resource global-network (storage/sub global-filesystem
@@ -167,6 +168,14 @@
  global-negotiate (storage/sub negotiate global-network global-filesystem)
  (curry negotiate global-network (storage/sub global-filesystem
                                               (list "cache" "negotiate")))
+
+ pipe-console (raw-ports->console)
+ (fn ()
+   (values inner-in to-inner) = (make-pipe)
+   (values from-inner inner-out) = (make-pipe)
+   inner-console = (raw-ports->console inner-in inner-out)
+   outer-console = (raw-ports->console from-inner to-inner)
+   (values inner-console outer-console))
 
  capabilities->context ()
  (lambda (cap-hash) (lambda (cap-key)
