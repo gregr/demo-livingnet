@@ -13,9 +13,10 @@
     ('() '())))
 
 (define (lib->package lib)
-  (forl (list name deps body) <- (triples lib)
-        (cons name (list (forl dep <- deps (list #f dep))
-                         `(lambda ,deps ,body)))))
+  (make-immutable-hash
+    (forl (list name deps body) <- (triples lib)
+          (cons name (list (forl dep <- deps (list #f dep))
+                           `(lambda ,deps ,body))))))
 
 (define (lib->module name provisions lib)
   (define module-body (forl (list name deps body) <- (triples lib)
@@ -31,6 +32,10 @@
        racket/set)
      ,@module-body))
 
+(define (persist-package fsys package)
+  (for_ (values name data) <- package
+        (o@ fsys 'put (list "lib" (format "~a" name)) data)))
+
 (define lib (read/file "lib.rkts"))
 (define provisions
   '(global-network
@@ -42,11 +47,8 @@
 (require 'lib)
 (define net global-network)
 (define fsys global-storage)
-(define package (make-immutable-hash (lib->package lib)))
-(define (lib-name name) (list "lib" (format "~a" name)))
-
-(for_ (values name data) <- package
-      (o@ fsys 'put (lib-name name) data))
+(define package (lib->package lib))
+(persist-package fsys package)
 
 (def (get-local host request)
   _ = (when host (error "get-local applied to remote dependency: ~a, ~a"
