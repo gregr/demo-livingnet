@@ -135,7 +135,7 @@
         code = (cache-get fsys (signature->path hostname request)
                           (thunk (void)) #f)
         code = (if (void? code) (download net hostname request) code)
-        (with-handlers ((exn:fail? identity)) ((eval code)))))
+        (with-handlers ((exn:fail? identity)) (eval code))))
 
   global-network ()
   (let ((connection (class _ (conn) () ()
