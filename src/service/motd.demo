@@ -1,0 +1,6 @@
+Y
+Y
+(() (ctx)
+    (lets
+      console = (ctx 'console)
+      (o@ console 'put-line "Greetings from the MOTD server.")))
