@@ -17,6 +17,8 @@
   read/no-eof
   read/file
   read/string
+  read-all
+  read-all/string
   write/file
   write/string
   triples
@@ -61,6 +63,12 @@
                            (result result)))
 (define (read/string str) (read/no-eof (open-input-string str)))
 (define (read/file path) (read/string (blocking-read path)))
+(define (read-all in)
+  (let loop ((exprs '()))
+    (match (read in)
+      ((? eof-object?) (reverse exprs))
+      (expr (loop (list* expr exprs))))))
+(define (read-all/string str) (read-all (open-input-string str)))
 (define (write/string value)
   (if (void? value) "" (call-with-output-string (curry write value))))
 (define (write/file path value) (blocking-write path (write/string value)))
