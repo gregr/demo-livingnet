@@ -4,5 +4,6 @@ set -eufo pipefail
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 user_dir="$here/../machines/user0"
 
+trap "kill 0; exit" INT TERM EXIT
 cd "$user_dir"
-exec racket bootstrap.rkt
+racket bootstrap.rkt

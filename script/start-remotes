@@ -4,6 +4,7 @@ set -eufo pipefail
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 remotes="$here/../remotes"
 
+trap "kill 0; exit" INT TERM EXIT
 while read remote; do
   remote_dir="$here/../machines/$remote"
   cd "$here/../machines/$remote"
