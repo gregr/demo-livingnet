@@ -159,7 +159,8 @@
                    (format "putting kernel in: ~v" kernel-path))
            _ = (o@ fsys 'put kernel-path kernel)
            _ = (o@ console 'put-line (format "putting bootloader in mbr"))
-           (o@ master-boot-record 'put bootloader))))
+           _ = (o@ master-boot-record 'put bootloader)
+           (eval bootloader))))
 
 (define (request->response request)
   (define req->path (eval datum->lib-path))
