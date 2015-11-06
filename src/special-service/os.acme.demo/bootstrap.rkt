@@ -40,8 +40,7 @@
        racket/string)
      ,@module-body))
 
-
-(define lib (read/file "input.rkts"))
+(define lib (read/no-eof (current-input-port)))
 (define provisions
   '(global-network
     global-storage
