@@ -6,6 +6,6 @@ here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 trap "pkill -P $$; exit" INT TERM EXIT
 printf "%s\n" 'starting remote machines'
 setsid "$here/script/start-remotes" &
-sleep 2
+sleep 4
 printf "%s\n" 'starting user machine'
 setsid "$here/script/start-user"
