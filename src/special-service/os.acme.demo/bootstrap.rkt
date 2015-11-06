@@ -11,13 +11,19 @@
   '(lambda (lib)
      (make-immutable-hash
        (forl (list name deps body) <- (triples lib)
-             (cons name (list (forl dep <- deps (list #f dep))
-                              `(lambda ,deps ,body)))))))
+             expr = `(lambda ,deps ,body)
+             (cons name (if (equal? '() name) expr
+                          (list (forl dep <- deps (list #f dep))
+                                expr)))))))
+
+(define datum->lib-path
+  '(lambda (datum)
+     (if (list? datum) (list* "lib" datum) (list "lib" (format "~s" datum)))))
 
 (define persist-package
-  '(lambda (fsys package)
+  `(lambda (fsys package)
      (for_ (values name data) <- package
-           (o@ fsys 'put (list "lib" (format "~a" name)) data))))
+           (o@ fsys 'put (,datum->lib-path name) data))))
 
 (define (lib->module name provisions lib)
   (define module-body (forl (list name deps body) <- (triples lib)
@@ -68,9 +74,9 @@
               _ = (o@ console 'put-line "accepting connections")
               (network-serve-requests global-network ,request->response)))
      (define lib-request->response
-       '(lambda (request)
+       `(lambda (request)
           (o@ console 'put-line (format "received request: ~v" request))
-          (define response (o@ fsys 'get (list* "lib" request)))
+          (define response (o@ fsys 'get (,',datum->lib-path request)))
           (o@ console 'put-line (format "serving: ~v" response))
           response))
      (define user-kernel
@@ -135,9 +141,10 @@
            (o@ master-boot-record 'put bootloader))))
 
 (define (request->response request)
+  (define req->path (eval datum->lib-path))
   (displayln (format "received request: ~v" request))
   (define response
-    (if request (o@ fsys 'get (list* "lib" request)) bootstrap-os))
+    (if request (o@ fsys 'get (req->path request)) bootstrap-os))
   (displayln (format "serving: ~v" response))
   response)
 
