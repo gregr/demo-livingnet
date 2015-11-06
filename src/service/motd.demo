@@ -1,6 +1,11 @@
 Y
 Y
-(() (ctx)
+(motd ()
+ "This is the message of the day."
+ () (ctx)
     (lets
+      (list _ proc-expr) = ((ctx 'get) #f 'motd)
+      message = ((eval proc-expr))
       console = (ctx 'console)
-      (o@ console 'put-line "Greetings from the MOTD server.")))
+      _ = (o@ console 'put-line "Greetings from the MOTD server!")
+      (o@ console 'put-line message)))
