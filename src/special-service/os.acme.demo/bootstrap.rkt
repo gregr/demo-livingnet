@@ -80,7 +80,8 @@
           response))
      (define user-kernel
        `(lets ,@',(deps->bindings
-                    '(global-negotiate global-console
+                    '(global-get global-negotiate
+                      global-console global-filesystem global-network
                       capabilities->context capabilities-basic))
               console = global-console
               ; TODO: limit eval namespace and capabilities
@@ -92,12 +93,33 @@
                                 (capabilities->context
                                   (capabilities-basic host console)))))
               _ = (o@ console 'put-line "kernel started")
-              _ = (o@ console 'put "choose a destination: ")
-              host = (o@ console 'get-line)
-              result = ((global-negotiate (host->eval host)) host '())
-              _ = (o@ console 'put-line (format "produced ~s" result))
-              _ = (o@ console 'put-line "kernel stopping")
-              result))
+              get = (lambda (host . args) (apply (global-get host) host args))
+              negotiate = (lambda (host . args)
+                            (apply (global-negotiate (host->eval host))
+                                   host args))
+              eval-all = (lambda (exprs)
+                           (eval `(let ((console ,global-console)
+                                        (network ,global-network)
+                                        (filesystem ,global-filesystem)
+                                        (get ,get)
+                                        (negotiate ,negotiate)) ,@exprs)))
+              _ = (o@ console 'put-line
+                      (string-append
+                        "REPL {console, network, filesystem, get, negotiate}"
+                        "\ne.g. see the MOTD: (negotiate \"motd.demo\" '())"))
+              (let loop ((lines '()))
+                (o@ console 'put (if (empty? lines) "> " ". "))
+                (match (o@ console 'get-line)
+                  ("" (o@ console 'put-line
+                          (with-handlers
+                            ((exn:fail? identity))
+                            (format "~v"
+                                    (eval-all
+                                      (read-all/string
+                                        (string-join (reverse lines) "\n"))))))
+                   (loop '()))
+                  ((? eof-object?) (o@ console 'put-line "kernel stopping"))
+                  (line (loop (list* line lines)))))))
      (define kernel-path '("boot" "kernel"))
      (define bootloader
        `(lets ,@',(deps->bindings '(global-console global-filesystem))
