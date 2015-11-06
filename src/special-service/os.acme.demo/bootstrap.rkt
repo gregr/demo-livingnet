@@ -75,17 +75,22 @@
           response))
      (define user-kernel
        `(lets ,@',(deps->bindings
-                    '(global-negotiate global-console capabilities-basic))
+                    '(global-negotiate global-console
+                      capabilities->context capabilities-basic))
               console = global-console
               ; TODO: limit eval namespace and capabilities
               host->eval = (lambda (host)
                              (lambda (prog)
+                               (o@ console 'put-line
+                                   (format "evaluating: ~s" prog))
                                ((eval prog)
-                                (capabilities-basic host console))))
+                                (capabilities->context
+                                  (capabilities-basic host console)))))
               _ = (o@ console 'put-line "kernel started")
               _ = (o@ console 'put "choose a destination: ")
               host = (o@ console 'get-line)
               result = ((global-negotiate (host->eval host)) host '())
+              _ = (o@ console 'put-line (format "produced ~s" result))
               _ = (o@ console 'put-line "kernel stopping")
               result))
      (define kernel-path '("boot" "kernel"))
