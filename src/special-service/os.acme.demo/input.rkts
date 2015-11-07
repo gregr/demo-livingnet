@@ -157,6 +157,7 @@
           (method-table
             self
             (root () '())
+            (ls (path) (storage-list (subpath self path)))
             (get (path) (storage-get (subpath self path)))
             (put (path value) (storage-put (subpath self path) value))
             (delete (path) (storage-delete (subpath self path))))))

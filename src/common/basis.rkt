@@ -14,6 +14,7 @@
   storage-delete
   storage-get
   storage-put
+  storage-list
   read/no-eof
   read/file
   read/string
@@ -29,9 +30,11 @@
   gregr-misc/list
   gregr-misc/oop
   gregr-misc/record
+  gregr-misc/string
   gregr-misc/sugar
   racket/file
   racket/function
+  racket/list
   racket/match
   racket/port
   racket/runtime-path
@@ -95,13 +98,28 @@
 (def (network-recv (connection _ in _)) (read/file in))
 
 (define dir-storage (build-path dir-hardware "storage"))
-(def (storage-path path)
-  (values dirs base) = (list-init+last (map encode-base32hex path))
-  dirs = (forl dir <- dirs (string-append dir "_D"))
-  (build-path (apply build-path dir-storage dirs) base))
+(define (storage-path path (dir? #f))
+  (lets (values dirs base) = (list-init+last (map encode-base32hex path))
+        dirs = (forl dir <- dirs (string-append dir "_D"))
+        base = (if dir? (string-append base "_D") base)
+        (build-path (apply build-path dir-storage dirs) base)))
+(define (storage-path->segments path (drop-count 0))
+  (lets (values dirs base) = (list-init+last
+                               (map path->string
+                                    (drop (explode-path path) drop-count)))
+        dirs = (forl dir <- dirs
+                     len = (string-length dir)
+                     (string-range-remove dir (- len 2) len)) ; remove the _D
+        (map decode-base32hex (append dirs (list base)))))
 (define (storage-get path) (read/file (storage-path path)))
 (define (storage-put path value) (write/file (storage-path path) value))
 (define (storage-delete path) (delete-directory/files (storage-path path)))
+(def (storage-list path)
+  path = (storage-path path #t)
+  plen = (length (explode-path path))
+  (forl subpath <- (if (directory-exists? path) (in-directory path) '())
+        #:when (file-exists? subpath)
+        (storage-path->segments subpath plen)))
 
 (define (bootstrap/local path) (eval (storage-get path)))
 (define (bootstrap/remote hostname)
