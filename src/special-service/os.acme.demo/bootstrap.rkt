@@ -69,7 +69,6 @@
                     '(global-network global-filesystem global-console
                       network-serve-requests))
               console = global-console
-              fsys = global-filesystem
               _ = (o@ console 'put-line "accepting connections")
               (network-serve-requests global-network ,request->response)))
      (define lib-request->response
@@ -92,7 +91,6 @@
                                ((eval prog)
                                 (capabilities->context
                                   (capabilities-basic host console)))))
-              _ = (o@ console 'put-line "kernel started")
               get = (lambda (host . args) (apply (global-get host) host args))
               negotiate = (lambda (host . args)
                             (apply (global-negotiate (host->eval host))
@@ -134,7 +132,6 @@
      (lets ,@(deps->bindings
                '(global-console global-filesystem master-boot-record))
            console = global-console
-           _ = (o@ console 'put-line "built filesystem")
            fsys = global-filesystem
            _ = (o@ console 'put-line "install server kernel? [Y/n]")
            kernel =

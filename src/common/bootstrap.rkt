@@ -8,4 +8,3 @@
 
 (displayln "starting default bootstrap")
 (bootstrap/default "os.acme.demo")
-(displayln "finished default bootstrap")
