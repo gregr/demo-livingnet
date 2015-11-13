@@ -192,10 +192,12 @@
    (define (host->fsys host)
      (storage/sub global-filesystem (list "application-data" host)))
    (define (host->network net self-host)
-     (object '()
-             (method-table _
-                           (connect (host) (if (equal? self-host host)
-                                             (o@ net 'connect host) (void))))))
+     (object
+       '()
+       (method-table
+         _
+         (connect (host) (if (or (not host) (equal? self-host host))
+                           (o@ net 'connect self-host) (void))))))
    (define (capabilities-basic host console)
      (hash 'console console
            'network (host->network global-network host)
