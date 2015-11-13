@@ -69,6 +69,7 @@
                     '(global-network global-filesystem global-console
                       network-serve-requests))
               console = global-console
+              fsys = global-filesystem
               _ = (o@ console 'put-line "accepting connections")
               (network-serve-requests global-network ,request->response)))
      (define lib-request->response
