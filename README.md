@@ -15,6 +15,31 @@ Aside from safety concerns, the current system has not realized the potential fo
    - To restart existing machines while preserving state, run: `./start`
 3. Evaluate racket expressions within the REPL.
 
+## Introduction
+
+Upon booting, you will be given a racket REPL with access to machine capabilities and a suggestion for retrieving the MOTD.  Aside from basic "hardware" access, you should also see `get` and `negotiate` in the capabilities list.  These two operations form the heart of this minimal design.
+
+* `get` is used to retrieve data, uninterpreted, from a remote source.  You may think of this as similar to `GET` in the WWW design, but without the weight and assumptions of HTTP.
+
+* `negotiate` is used to retrieve and evaluate a program from a remote source.
+
+And that's all you need to get going.  Consider the WWW, which specifies, up front and in great detail, the form and communication of content you may publish and consume, and the manner in which you may navigate and display that content.  Under the WWW assumptions, such specification is necessary for remote agents to properly interoperate.  In contrast, this design supports just-in-time interoperation via `negotiate`: because a remote agent can directly provide you with a program, it can teach your system how to interoperate with it.  And it can use whatever "protocol" it deems fit for the purpose.  All your system needs is an interpreter.
+
+If you are even vaguely familiar with issues of web security, `negotiate` will sound dangerous.  Indeed, given a typical programming language running on a typical operating system, such an operation would be dangerous if left unchecked.  There are some standard approaches to mitigating this danger, depending on the particular technology:
+
+* Flash or Java applets:
+  - Danger is mitigated by running within a sandbox.  While sandboxed execution prevents programs from harming you, it also limits what you can do with them.
+
+* Javascript in the browser:
+  - Danger is mitigated by not providing much more than the ability to script the browser.  The limitations are similar to sandboxed execution.
+
+* Downloading arbitrary desktop software from the internet to install and run locally:
+  - Danger is mitigated by asking if you're really really sure you want to install/run something from company X.  You're not limited, neither is the program.  Who knows what it will do to you?
+
+In contrast to these approaches, this design illustrates how to mitigate danger through [capability-based security](https://en.wikipedia.org/wiki/Capability-based_security).  `negotiate` retrieves data from a remote source, interpreting it as a procedure expecting a single context argument.  This context represents all the power you are willing to hand over to it to do its work.  Typical programming languages expose ample amounts of ambient authority, allowing such a procedure to sabotage you.  But in a capability-secure programming language, this procedure will not have access to any dangerous capabilities that you do not explicitly hand over.  The remote program can be a first-class citizen, safe to run side-by-side with the rest of your program.
+
+Caveat: while this demo points in the right direction, it is not itself secure as it does not make use of a capability-secure programming language.
+
 ## TODO
 
 - more sophisticated authority management
