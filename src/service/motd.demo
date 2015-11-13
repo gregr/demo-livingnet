@@ -1,7 +1,7 @@
 Y
 Y
 (motd ()
- "This is the message of the day."
+ "Check out hypodoc! (negotiate \"hypodoc.demo\" '())"
  () (ctx)
     (lets
       (list _ proc-expr) = ((ctx 'get) #f 'motd)
