@@ -6,6 +6,15 @@ This demo is not even close to being fit for real world use.  At the very least,
 
 Aside from safety concerns, the current system has not realized the potential for programmability by the user.  For a complete experience, the programming language implementation this system sits on must support highly interactive evaluation of negotiated programs.  It must be possible to visualize, pause, step through (manually or at a regular interval), modify, copy, or even pull components out of a program for use in other programs.  To get a better idea of what is possible, try out [Squeak Etoys](http://www.squeakland.org).
 
+## Getting Started
+
+1. Clone this repo and `cd` to it.
+2. Start service and user machines.
+   - To run with a clean slate (creating new machines), run:`./clean-start`
+       - When asked if you'd like to install a server kernel, enter: `n`
+   - To restart existing machines while preserving state, run: `./start`
+3. Evaluate racket expressions within the REPL.
+
 ## TODO
 
 - more sophisticated authority management
