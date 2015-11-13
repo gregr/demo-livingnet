@@ -67,7 +67,7 @@
      (define (server-kernel request->response)
        `(lets ,@',(deps->bindings
                     '(global-network global-filesystem global-console
-                      network-serve-requests))
+                      network-serve-requests storage/sub))
               console = global-console
               fsys = global-filesystem
               _ = (o@ console 'put-line "accepting connections")

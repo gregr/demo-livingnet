@@ -1,0 +1,212 @@
+Y
+N
+(let ()
+  (define (point-new (lpos 0) (cpos 0)) (list lpos cpos))
+  (def (point-normalize content (list lpos cpos))
+       nlines = (length content)
+       lpos = (max 0 (min (- nlines 1) lpos))
+       ncols = (if (= nlines 0) 0 (string-length (list-ref content lpos)))
+       cpos = (max 0 (min ncols cpos))
+       (list lpos cpos))
+  (define (coord-move pmin pmax pos movement)
+    (match movement
+      ('start pmin)
+      ('end pmax)
+      (delta (+ delta pos))))
+  (def (point-move content (list lpos cpos) (list ml mc))
+    lpos = (coord-move 0 (length content) lpos ml)
+    (list lpos cpos) = (point-normalize content (list lpos cpos))
+    cpos = (coord-move 0 (string-length (list-ref content lpos)) cpos mc)
+    (point-normalize content (list lpos cpos)))
+  (def (move-handle doc name point movement)
+       _ = (o@ global-console 'put-line (format "moving ~v ~v ~v ~v" doc name point movement))
+       (list content handles) = doc
+       handles = (hash-set handles name (point-move content point movement))
+       (list content handles))
+
+  (def ((update trans) doc point)
+    _ = (o@ global-console 'put-line (format "point ~v" point))
+    (list lpos cpos) = point
+    _ = (o@ global-console 'put-line (format "doc ~v" doc))
+    (list content handles) = doc
+    (values above (list* line below)) = (split-at content lpos)
+    _ = (o@ global-console 'put-line (format "split ~v ~v ~v" above line below))
+    (values prefix suffix) = (split-at (string->list line) cpos)
+    _ = (o@ global-console 'put-line (format "transforming ~v ~v ~v ~v" above below prefix suffix))
+    (values content movement) = (trans content above below prefix suffix)
+    (list content
+          (make-immutable-hash
+            (forl (values name hpoint) <- handles
+                  (cons name (point-normalize
+                               content (movement point hpoint)))))))
+
+  (def ((move-same-line cdelta) (list lp cp) (list hlp hcp))
+       (list hlp (if (and (= lp hlp) (< cp hcp)) (+ cdelta hcp) hcp)))
+  (def ((move-offset-below loffset ldelta) (list lp cp) (list hlp hcp))
+       (list (if (< (+ lp loffset) hlp) (+ ldelta hlp) hlp) hcp))
+  (def (move-split ref pos)
+       (list lp cp) = ref
+       (list hlp hcp) = pos
+       (if (and (= lp hlp) (< cp hcp)) (list (+ hlp 1) (- hcp cp))
+         ((move-offset-below 0 1) ref pos)))
+  (def (move-merge ref pos)
+       (list lp cp) = ref
+       (list hlp hcp) = pos
+       (if (= (+ 1 lp) hlp) (list lp (+ hcp cp))
+         ((move-offset-below 1 -1) ref pos)))
+
+  (define delete
+    (update (lambda (content above below prefix suffix)
+              (match suffix
+                ('() (values content (lambda (p hp) hp)))
+                ((cons _ suffix)
+                 (lets line = (list->string (append prefix suffix))
+                       content = (append above (list* line below))
+                       (values content (move-same-line -1))))))))
+  (define (insert doc point char)
+    ((update (fn (content above below prefix suffix)
+                 line = (list->string (append prefix (list* char suffix)))
+                 content = (append above (list* line below))
+                 (values content (move-same-line 1)))) doc point))
+  (define line-split
+    (update (fn (content above below prefix suffix)
+                mid = (map list->string (list prefix suffix))
+                content = (append above mid below)
+                (values content move-split))))
+  (define line-merge
+    (update (fn (content above below prefix suffix)
+                line = (list->string (append prefix suffix))
+                below =
+                (match below
+                  ('() (list line))
+                  ((cons next below) (list* (string-append line next) below)))
+                (values (append above below) move-merge))))
+
+  (define doc-new (list '("") (hash)))
+
+  (def (doc-update doc handle-name action)
+    _ = (o@ global-console 'put-line "here 0")
+    (list content handles) = doc
+    _ = (o@ global-console 'put-line "here 1")
+    point = (hash-ref handles handle-name (point-new))
+    _ = (o@ global-console 'put-line "here 2")
+    (match action
+      ('(pass) doc)
+      ('(quit) (list content (hash-remove handles handle-name)))
+      (`(move ,movement) (move-handle doc handle-name point movement))
+      (`(insert ,char) (insert doc point char))
+      ('(delete) (delete doc point))
+      ('(line-split) (line-split doc point))
+      ('(line-merge) (line-merge doc point))))
+
+  (def (doc-updates doc (list handle-name actions))
+    _ = (o@ global-console 'put-line (format "processing actions: ~v" actions))
+    (forf doc = doc
+          action <- actions
+          (doc-update doc handle-name action)))
+
+  (o@ global-console 'put-line "defining docs-fsys and reactor")
+
+  (define docs-fsys (storage/sub global-filesystem (list "documents")))
+  (def (docs-get doc-name)
+    doc = (o@ docs-fsys 'get doc-name)
+    (if (void? doc) doc-new doc))
+  (define (docs-put doc-name doc) (o@ docs-fsys 'put (list doc-name) doc))
+
+  (define (doc-reactor-thread doc-name actions<- updates->)
+    (def (loop doc)
+      _ = (o@ global-console 'put-line "waiting for actions")
+      next-doc = (doc-updates doc (channel-get actions<-))
+      _ = (o@ global-console 'put-line "persisting new doc")
+      _ = (docs-put doc-name next-doc)
+      _ = (o@ global-console 'put-line "sending update")
+      _ = (channel-put updates-> next-doc)
+      _ = (o@ global-console 'put-line "looping with next-doc")
+      (loop next-doc))
+    (o@ global-console 'put-line (format "opening doc: ~a" doc-name))
+    (thread (thunk (loop (docs-get (list doc-name))))))
+
+  (define (doc-reactor doc-name)
+    (lets
+      actions<- = (make-channel)
+      updates-> = (make-channel)
+      _ = (doc-reactor-thread doc-name actions<- updates->)
+      (lambda (actions)
+        (o@ global-console 'put-line (format "sending actions: ~v" actions))
+        (channel-put actions<- actions) (channel-get updates->))))
+
+  (o@ global-console 'put-line "defining the-doc")
+
+  ; TODO: multiple docs
+  (define the-doc (doc-reactor "the-doc"))
+
+  (o@ global-console 'put-line "defining client UI")
+
+  (define client-counter (box 0))
+  (define (client-ui-program)
+    (define cid (unbox client-counter))
+    (set-box! client-counter (+ 1 cid))
+    `(fn (ctx)
+         console = (ctx 'console)
+         conn = (o@ (ctx 'network) 'connect #f)
+         act = (lambda (actions)
+                 (o@ conn 'put (list "the-doc" (list ,cid actions)))
+                 (o@ conn 'get))
+         (letn loop (values (list content handles)) = (values (act '((pass))))
+               cursor-locs = (list->set (hash-values handles))
+               _ = (begin
+                     (o@ console 'put-line "DOCUMENT: the-doc")
+                     (o@ console 'put-line "=================")
+                     (for_ line <- content
+                           lidx <- (range (length content))
+                           chars = (string->list line)
+                           line = (string-append*
+                                    (forl char <- (append chars '(#\space))
+                                          cidx <- (range (+ 1 (length chars)))
+                                          (if (set-member? cursor-locs
+                                                           (list lidx cidx))
+                                            (format "\e[7m~a\e[0m" char)
+                                            (format "~a" char))))
+                           (o@ console 'put-line line))
+                     (o@ console 'put-line "=================")
+                     (o@ console 'put-line (format "HANDLES: ~v" handles))
+                     (o@ console 'put "> ")
+                     (o@ console 'flush))
+               ; TODO: raw key input
+               cmd = (match (o@ console 'get-line)
+                       (" " '((pass)))
+                       ("q" '((quit)))
+                       ("j" '((move (1 0))))
+                       ("k" '((move (-1 0))))
+                       ("h" '((move (0 -1))))
+                       ("l" '((move (0 1))))
+                       ("g" '((move (start 0))))
+                       ("G" '((move (end 0))))
+                       ("0" '((move (0 start))))
+                       ("$" '((move (0 end))))
+                       ("x" '((delete)))
+                       ("d" '((move (0 -1)) (delete))) ; TODO: backspace
+                       ("J" '((line-merge)))
+                       ("" '((line-split) (move (1 start)))) ; TODO: enter
+                       ("o" '((move (0 end)) (line-split) (move (1 start))))
+                       ("O" '((move (0 start)) (line-split)))
+                       (line (match (string->list line)
+                               ((list #\r char)
+                                (list (list 'insert char)
+                                      '(move (0 1)) '(delete) '(move (0 -1))))
+                               ((cons #\i chars)
+                                (append* (forl char <- chars
+                                               (list (list 'insert char)
+                                                     '(move (0 1))))))
+                               (_ '((pass))))))
+               doc = (act cmd)
+               (if (equal? '((quit)) cmd)
+                 (begin (o@ conn 'delete) (o@ conn 'close))
+                 (loop doc)))))
+
+  (o@ global-console 'put-line "defining request->response")
+
+  (lambda (request)
+    (match request
+      ('() (client-ui-program))
+      ((list doc-name handle-actions) (the-doc handle-actions)))))
