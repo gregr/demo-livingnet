@@ -40,6 +40,18 @@ In contrast to these approaches, this design illustrates how to mitigate danger 
 
 Caveat: while this demo points in the right direction, it is not itself secure as it does not make use of a capability-secure programming language.
 
+## Examples
+
+In case you haven't found them on your own, here are the remote systems you may interact with:
+
+* `(negotiate "motd.demo" '())`
+    - This is a simple message-of-the-day server.
+
+* `(negotiate "hypodoc.demo" '())`
+    - This is an extremely-underpowered, mostly-untested collaborative "cloud-based" text editor.  It's ugly and probably full of bugs.
+
+Although it's inconvenient at the moment, you may of course also `(get "remote-of-your-choice.demo" '())` to retrieve the remote program without actually executing it, so that you can modify or make other use of it from the REPL.
+
 ## TODO
 
 - more sophisticated authority management
