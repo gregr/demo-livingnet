@@ -33,8 +33,8 @@ If you are even vaguely familiar with issues of web security, `negotiate` will s
 * Javascript in the browser:
   - Danger is mitigated by not providing much more than the ability to script the browser.  The limitations are similar to sandboxed execution.
 
-* Downloading arbitrary desktop software from the internet to install and run locally:
-  - Danger is mitigated by asking if you're really really sure you want to install/run something from company X.  You're not limited, neither is the program.  Who knows what it will do to you?
+* Downloading arbitrary, native desktop software from the internet to install and run locally:
+  - Danger is mitigated by asking if you're really really sure you want to install/run something from company X.  You're not limited, but neither is the program.  Who knows what it will do to you?
 
 In contrast to these approaches, this design illustrates how to mitigate danger through [capability-based security](https://en.wikipedia.org/wiki/Capability-based_security).  `negotiate` retrieves data from a remote source, interpreting it as a procedure expecting a single context argument.  This context represents all the power you are willing to hand over to it to do its work.  Typical programming languages expose ample amounts of ambient authority, allowing such a procedure to sabotage you.  But in a capability-secure programming language, this procedure will not have access to any dangerous capabilities that you do not explicitly hand over.  The remote program can be a first-class citizen, safe to run side-by-side with the rest of your program.
 
