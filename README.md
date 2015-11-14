@@ -40,6 +40,15 @@ In contrast to these approaches, this design illustrates how to mitigate danger 
 
 Caveat: while this demo points in the right direction, it is not itself secure as it does not make use of a capability-secure programming language.
 
+## Summary
+
+So what exactly is the new technology on display here?  There isn't really any.  The main contribution is to demonstrate an alternative arrangement of existing ideas.  This arrangement could be summed up as:
+
+1. Distribute native desktop software at least as transparently as today's web content.
+2. Run and cooperate safely with this software in a capability-secure environment.
+
+The effect of this simple re-organization should not be underestimated.  The danger currently involved in installing and running native software from the internet creates friction, encouraging it to be bundled as large, monolithic applications whose components can't easily be reused.  By eliminating the danger and minimizing friction, it becomes affordable to distribute native software as smaller, more flexible modules that can be composed in unanticipated ways.  This may sound like today's installation and use of software libraries by programmers.  The difference is in granularity and transparency: safe and convenient even for the smallest components, even for the average user of a computer.
+
 ## Examples
 
 In case you haven't found them on your own, here are the remote systems you may interact with:
