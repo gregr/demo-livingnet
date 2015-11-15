@@ -8,12 +8,14 @@ Aside from safety concerns, the current system has not realized the potential fo
 
 ## Getting Started
 
-1. Clone this repo and `cd` to it.
-2. Start service and user machines.
+1. Install [Racket 6 or greater](http://download.racket-lang.org/).
+2. Install gregr-misc: `raco pkg install git://github.com/gregr/racket-misc`
+3. Clone this repo and `cd` to it.
+4. Start service and user machines.
    - To run with a clean slate (creating new machines), run:`./clean-start`
        - When asked if you'd like to install a server kernel, enter: `n`
    - To restart existing machines while preserving state, run: `./start`
-3. Evaluate racket expressions within the REPL.
+5. Evaluate racket expressions within the REPL.
 
 ## Introduction
 
