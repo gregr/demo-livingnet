@@ -5,11 +5,16 @@ here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 target_host="$1"
 machine_dir="$(pwd)"
 network_dir="$machine_dir/hardware/network"
-wan_dir="$network_dir/uplink/wan"
 connections_dir="$network_dir/connections"
 CONN_DIR="$(mktemp -d $network_dir/connections/connection.XXXXXXXX)"
+TARGET_PATH="$network_dir/uplink/wan/$target_host"
 
 mkfifo "$CONN_DIR/in"
 mkfifo "$CONN_DIR/out"
-printf "\"%s\"\n" "$CONN_DIR" > "$wan_dir/$target_host"
+while [ ! -p "$TARGET_PATH" ]; do
+  printf "waiting for listener at: %s\n" "$TARGET_PATH" >> "$machine_dir/connection-log.txt"
+  sleep 1
+done
+printf "connecting to listener at: %s\n" "$TARGET_PATH" >> "$machine_dir/connection-log.txt"
+printf "\"%s\"\n" "$CONN_DIR" > "$TARGET_PATH"
 printf "%s" "$CONN_DIR"

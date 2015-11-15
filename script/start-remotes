@@ -9,6 +9,5 @@ while read remote; do
   remote_dir="$here/../machines/$remote"
   cd "$here/../machines/$remote"
   racket bootstrap.rkt < "$remote_dir/input.rkts" &> "$remote_dir/log.txt" &
-  sleep 2
 done < "$remotes"
 wait
