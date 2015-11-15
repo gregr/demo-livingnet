@@ -61,24 +61,24 @@ In case you haven't found them on your own, here are the remote systems you may 
 * `(negotiate "hypodoc.demo" '())`
     - This is an extremely-underpowered, mostly-untested collaborative "cloud-based" text editor.  It's ugly and probably full of bugs.
     - Awkwardly enter commands of the following forms (omitting quotes) at  the `>` prompt:
-        - " ": pass (used to take no action but still display any updates received from collaborators)
-        - "q": quit
-        - "j": move down one line
-        - "k": move up one line
-        - "h": move left one character
-        - "l": move right one character
-        - "g": move up to the first line
-        - "G": move down to the last line
-        - "0": move to the beginning of the line
-        - "$": move to the end of the line
-        - "x": delete
-        - "d": backspace
-        - "J": append the next line to the current line
-        - "": enter (add a newline)
-        - "o": create an empty line below the current line
-        - "O": create an empty line above the current line
-        - "r<REPLACEMENT-CHAR>": replace the current character
-        - "i<STRING>": insert a string of characters at the current position
+        - `" "`: pass (used to take no action but still display any updates received from collaborators)
+        - `"q"`: quit
+        - `"j"`: move down one line
+        - `"k"`: move up one line
+        - `"h"`: move left one character
+        - `"l"`: move right one character
+        - `"g"`: move up to the first line
+        - `"G"`: move down to the last line
+        - `"0"`: move to the beginning of the line
+        - `"$"`: move to the end of the line
+        - `"x"`: delete
+        - `"d"`: backspace
+        - `"J"`: append the next line to the current line
+        - `""`: enter (add a newline)
+        - `"o"`: create an empty line below the current line
+        - `"O"`: create an empty line above the current line
+        - `"r<REPLACEMENT-CHAR>"`: replace the current character
+        - `"i<STRING>"`: insert a string of characters at the current position
     - To examine the collaborative aspect run `./script/start-user` after bootstrapping to start a second user instance.
 
 Although it's inconvenient at the moment, you may of course also `(get "remote-of-your-choice.demo" '())` to retrieve the remote program without actually executing it, so that you can modify or make other use of it from the REPL.
