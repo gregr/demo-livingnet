@@ -121,3 +121,27 @@ Although it's inconvenient at the moment, you may of course also `(get "remote-o
     - establishing conventions, deciphering foreign protocols, rosetta stones
 
 notes on accessibility and privacy
+
+## Future Design Plan
+
+- foundation
+    - hardware
+    - capability-secure PL interpreter
+
+- minimal OS
+    - system state database
+        - hardware state
+        - process management state
+        - get/negotiate caches
+        - application-specific storage
+
+- extended system
+    - shared state database
+        - undo/transaction-friendly versioning
+        - hierarchical path-based names for categorization and scoping
+        - example uses
+            - aggregate published application/topic/entity states
+            - real-time communication channels/sessions
+            - managed-time update propagation networks
+            - log-oriented databases
+            - event/message/work queues
