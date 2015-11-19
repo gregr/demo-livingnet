@@ -165,3 +165,27 @@ notes on accessibility and privacy
                     - idleness (actively focused, but not taking any actions)
                         - idleness detection: evidence-based heuristic + voluntary/courtesy indications
                         - access/use provides momentary evidence of presence
+
+    - design example for a collaborative editing application
+        - term or document (text files, ASTs, etc.)
+            - immutable snapshot, transformation produces new term
+        - revision
+            - term combined with metadata describing how it came into existence
+                - e.g. transformation of another term
+            - repositories as editable revision aggregates
+        - editor state
+            - current revision
+            - cursors
+                - an editor may contain several of these, possibly even more than one per user
+                    - a single cursor may also be operated by multiple users simultaneously
+                - each contains
+                    - a subterm focus; a path (functional reference) into a term
+                    - a history of user-annotated changes useful for blame and undo
+                    - a set of "redo" trees
+                    - other metadata (e.g. an optional list of users currently operating it)
+                - some thoughts about capabilities
+                    - cursors may be read-only
+                    - users may be given read-only control of a non-read-only cursors
+                    - users may not even have movement capabilities for a cursor (somebody is giving them a tour)
+            - optional reference to upstream editor
+                e.g. you may spin off a new editor to work asynchronously/privately and later merge work upstream
