@@ -145,3 +145,23 @@ notes on accessibility and privacy
             - managed-time update propagation networks
             - log-oriented databases
             - event/message/work queues
+
+    - collaborative UI
+        - share/collaborate/be-present at any level of granularity
+            - granularity examples: widgets, spaces, spaces of spaces
+        - traverse systems via links
+            - connect to a public system, meet other users, visit their personal systems or invite them to yours
+        - users
+            - represent people/agents acting in the system
+            - different visualizations/arrangements of info for users you're working with directly, indirectly, etc.
+                - users sharing your UI components (widgets, workspaces...)
+                - users not sharing your UI components, but are using applications whose state is visible in your UI
+                - personal contact lists
+                - interest-oriented contact directories/networks
+                - presence
+                    - input focus (are they actively focusing on a widget, or is their attention elsewhere?)
+                        - network connection indicates presence, but doesn't necessarily communicate fine-grained focus
+                        - notify those nearby of your focus/actions to keep them updated
+                    - idleness (actively focused, but not taking any actions)
+                        - idleness detection: evidence-based heuristic + voluntary/courtesy indications
+                        - access/use provides momentary evidence of presence
