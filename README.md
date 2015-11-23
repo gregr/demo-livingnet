@@ -12,9 +12,14 @@ Aside from safety concerns, the current system has not realized the potential fo
 2. Install gregr-misc: `raco pkg install git://github.com/gregr/racket-misc`
 3. Clone this repo and `cd` to it.
 4. Start service and user machines.
-   - To run with a clean slate (creating new machines), run:`./clean-start`
+   - To run with a clean slate (creating new machines), run: `./clean-start`
        - When asked if you'd like to install a server kernel, enter: `n`
    - To restart existing machines while preserving state, run: `./start`
+   - If running on a platform without `setsid` (e.g. Mac OSX) do the following instead:
+       - To run with a clean slate: `./script/clean`
+       - Terminal 1: `./script/start-remotes`
+       - Terminal 2: `./script/start-user`
+           - When asked if you'd like to install a server kernel, enter: `n`
 5. Evaluate racket expressions within the REPL.
 
 ## Introduction
