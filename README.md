@@ -9,6 +9,7 @@ Aside from safety concerns, the current system has not realized the potential fo
 ## Getting Started
 
 1. Install [Racket 6 or greater](http://download.racket-lang.org/).
+   - On Mac OSX you probably want to use brew: `brew install Caskroom/cask/racket`
 2. Install gregr-misc: `raco pkg install git://github.com/gregr/racket-misc`
 3. Clone this repo and `cd` to it.
 4. Start service and user machines.
