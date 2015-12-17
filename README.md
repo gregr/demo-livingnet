@@ -13,7 +13,7 @@ Aside from safety concerns, the current system has not realized the potential fo
 2. Install gregr-misc: `raco pkg install git://github.com/gregr/racket-misc`
 3. Clone this repo and `cd` to it.
 4. Start service and user machines.
-   - If runnin on a platform with `setsid` (e.g. not Mac OSX) do the following:
+   - If running on a platform with `setsid` (e.g. not Mac OSX) do the following:
        - To run with a clean slate (creating new machines), run: `./clean-start`
            - When asked if you'd like to install a server kernel, enter: `n`
        - To restart existing machines while preserving state, run: `./start`
